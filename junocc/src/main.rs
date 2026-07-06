@@ -28,7 +28,6 @@ struct JunoObject<'a> {
 
 fn main() {
     let args = Cli::parse();
-    dbg!(&args);
     let output = args.output.unwrap_or("out.junoc".to_string());
     let out_ext = output.split(".").last().unwrap_or("elf");
     let mut objects: Vec<JunoObject> = vec![];
