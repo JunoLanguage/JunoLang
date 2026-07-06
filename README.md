@@ -54,6 +54,18 @@ Run:
 cargo run -- examples/hello.juno
 ```
 
+
+## Using `junocc`
+
+### Compiling
+```bash
+junocc <files> -o [output]
+```
+example:
+```bash
+junocc examples/helloworld.juno examples/library.juno -o program
+```
+
 ## Roadmap
 
 * [x] Lexer

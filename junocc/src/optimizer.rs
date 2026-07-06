@@ -6,24 +6,10 @@ use libjuno::inkwell::{
     
 };
 
+use crate::get_target_machine;
+
 pub fn optimize(module: &mut Module) {
-    Target::initialize_native(&InitializationConfig::default()).unwrap();
-
-    let triple = TargetMachine::get_default_triple();
-
-    let target = Target::from_triple(&triple).unwrap();
-
-    let target_machine = target
-        .create_target_machine(
-            &triple,
-            "generic",
-            "",
-            OptimizationLevel::Default,
-            RelocMode::Default,
-            CodeModel::Default
-        )
-        .unwrap();
-
+    let target_machine = get_target_machine();
     module.run_passes("default<O3>", &target_machine, PassBuilderOptions::create()).unwrap();
     
 }
