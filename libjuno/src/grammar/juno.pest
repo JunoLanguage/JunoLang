@@ -1,0 +1,279 @@
+WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
+COMMENT = _{ "//" ~ (!"\n" ~ ANY)* }
+program = { SOI ~ item* ~ EOI }
+
+item = { function | import_stmt | struct_def }
+
+/* =========================
+   IMPORT
+========================= */
+
+import_stmt = { "import" ~ file_path ~ ";" }
+
+
+/* =========================
+   FUNCTIONS
+========================= */
+
+function = {
+    "fn" ~ ident
+    ~ "(" ~ params? ~ ")"
+    ~ ( "->" ~ type_ )?
+    ~ block
+}
+
+params = { param ~ ("," ~ param)* }
+
+param = { ident ~ ":" ~ type_ }
+
+block = { "{" ~ stmt* ~ "}" }
+
+/* =========================
+   STATEMENTS
+========================= */
+
+stmt = {
+      let_stmt
+    | loop_stmt
+    | if_stmt
+    | while_stmt
+    | for_stmt
+    | return_stmt
+    | break_stmt
+    | continue_stmt
+    | expr_stmt
+    | assign_stmt
+}
+
+let_stmt = {
+    "let" ~ let_stmt_mut? ~ ident ~ ":" ~ type_
+    ~ ( "=" ~ expr )?
+    ~ ";"
+}
+let_stmt_mut = ${"mut"}
+
+assign_stmt = {
+    ident ~ "=" ~ expr ~ ";"
+}
+
+expr_stmt = { expr ~ ";" }
+
+return_stmt = { "return" ~ expr? ~ ";" }
+
+break_stmt = { "break" ~ ";" }
+
+continue_stmt = { "continue" ~ ";" }
+
+/* =========================
+   CONTROL FLOW
+========================= */
+
+if_stmt = {
+    "if" ~ "(" ~ expr ~ ")" ~ block
+    ~ else_if*
+    ~ else_block?
+}
+
+else_if = {
+    "else" ~ "if" ~ "(" ~ expr ~ ")" ~ block
+}
+
+else_block = {
+    "else" ~ block
+}
+
+while_stmt = {
+    "while" ~ "(" ~ expr ~ ")" ~ block
+}
+
+for_stmt = {
+    "for" ~ "(" ~ expr ~ "in" ~ expr ~ ")" ~ block
+}
+
+loop_stmt = {
+    "loop" ~ block
+}
+
+/* =========================
+   EXPRESSIONS (PRIORITY LAYERED)
+========================= */
+
+expr = { logical }
+
+logical = {
+    comparison ~ ( logical_ops  ~ comparison )*
+}
+logical_ops = ${("&&" | "||")}
+
+
+comparison = {
+    arithmetic ~ ( comparison_ops ~ arithmetic )*
+}
+comparison_ops = ${("==" | "!=" | ">=" | "<=" | ">" | "<" )}
+
+
+arithmetic = {
+    term ~ ( arithmetic_ops  ~ term )*
+}
+arithmetic_ops = ${("+" | "-")}
+
+
+term = {
+    unary ~ ( term_ops ~ unary )*
+}
+term_ops = ${("*" | "/" | "%" | "//")}
+
+
+
+unary = {
+      unary_ops* ~ primary
+}
+unary_ops = ${("!" | "-" | "&" | "*")}
+
+primary = {
+      number
+    | boolean
+    | string
+    | char
+    | call
+    | var_ident
+    | array
+    | struct_init
+    | "(" ~ expr ~ ")"
+}
+
+/* =========================
+   CALLS
+========================= */
+
+call = {
+    var_ident ~ "(" ~ arg_list? ~ ")"
+}
+
+arg_list = {
+    arg ~ ("," ~ arg)*
+}
+
+arg = {
+    named_arg | positional_arg
+}
+
+named_arg = {
+    ident ~ "=" ~ expr
+}
+
+positional_arg = {
+    expr
+}
+
+/* =========================
+   TYPES
+========================= */
+
+type_ = {
+    type_prefix* ~ base_type ~ generics?
+}
+
+type_prefix = { "&" | "*" }
+
+base_type = {
+    array_type?
+    ~ var_ident
+}
+
+array_type = { "[" ~ integer ~ "]" }
+
+generics = {
+    "<" ~ type_ ~ ("," ~ type_)* ~ ">"
+}
+
+/* =========================
+   IDENTIFIERS
+========================= */
+
+ident = @{ !KEYWORD ~ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+var_ident = {
+    ident ~ (("." ~ ident) | ("::" ~ ident))*
+}
+
+/* =========================
+   LITERALS
+========================= */
+
+file_path = @{ ("." | ".." | "/") ~ (ASCII_ALPHANUMERIC | "." | "/" | "_" | "-")+ }
+
+number = @{ integer ~ fractional? }
+
+integer = @{ ASCII_DIGIT+ }
+
+fractional = @{ "." ~ ASCII_DIGIT+ }
+
+boolean = { "true" | "false" }
+
+string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
+char = @{
+    "'" ~ (
+          "\\n"
+        | "\\t"
+        | "\\r"
+        | "\\\\"
+        | "\\'"
+        | ANY
+    ) ~ "'"
+}
+
+array = {
+    "[" ~ expr_list? ~ "]"
+}
+
+expr_list = { expr ~ ("," ~ expr)* }
+
+ /* =========================
+    STRUCTS
+ ========================= */
+
+struct_def = {
+    "struct" ~ ident ~ "{" ~ struct_fields? ~ "}"
+}
+
+struct_fields = {
+    struct_field ~ ("," ~ struct_field)* ~ ","?
+}
+
+struct_field = {
+    ident ~ ":" ~ type_
+}
+
+
+struct_init = {
+    var_ident ~ "{" ~ struct_init_fields? ~ "}"
+}
+
+struct_init_fields = {
+    struct_init_field ~ ("," ~ struct_init_field)* ~ ","?
+}
+
+struct_init_field = {
+    ident ~ ":" ~ expr
+}
+
+/* =========================
+   KEYWORDS
+========================= */
+
+KEYWORD = {
+      "fn"
+    | "let"
+    | "mut"
+    | "if"
+    | "else"
+    | "while"
+    | "for"
+    | "return"
+    | "break"
+    | "continue"
+    | "import"
+}
+

@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "libjuno",
+    "junocc"
+]
+
+resolver = "2"
