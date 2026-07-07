@@ -227,7 +227,7 @@ name = "junocc"
 version = "0.1.1"
 dependencies = [
  "clap",
- "libjuno 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libjuno",
 ]
 
 [[package]]
@@ -244,21 +244,7 @@ checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
 name = "libjuno"
-version = "0.1.0"
-dependencies = [
- "inkwell",
- "llvm-sys",
- "pest",
- "pest_derive",
- "phf",
- "phf_macros",
-]
-
-[[package]]
-name = "libjuno"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5d3dc14d08d8a8cf2dd7a0686a15f49cc7c76c88a5d61b0f48068c883dfedcc"
+version = "0.1.1"
 dependencies = [
  "inkwell",
  "llvm-sys",
