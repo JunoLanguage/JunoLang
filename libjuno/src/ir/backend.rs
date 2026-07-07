@@ -67,20 +67,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     pub fn dump_ir(&self) {
         self.module.print_to_stderr();
     }
-    pub fn declare_builtin(&mut self, name: &str, ty: FunctionType<'ctx>) -> Result<(), LLVMError> {
-        let id = self.program.symbol_table
-            .iter()
-            .position(|s| s == name)
-            .ok_or_else(||
-                LLVMError::Message(format!("builtin '{}' not interned", name))
-            )? as SymbolId;
 
-        let func = self.module.add_function(name, ty, None);
-
-        self.functions.insert(id, func);
-
-        Ok(())
-    }
 
     pub fn compile(&mut self) -> Result<Module<'ctx>, LLVMError> {
         self.lower_program()?;

@@ -1,0 +1,9 @@
+
+
+fn main() -> i32 {
+    printf("hello from %s", "printf");
+    puts("hello form puts");
+    putchar('h');
+    putchar('i');
+    return 0;
+}
