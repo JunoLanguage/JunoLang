@@ -5,6 +5,8 @@
 use std::io::{Error, ErrorKind};
 
 use tower_lsp::lsp_types::{CompletionItem, CompletionParams, MessageType};
+use tracing::Instrument;
+use tracing::instrument::WithSubscriber;
 
 use crate::backend::Backend;
 use libjuno::{pest::Parser, *};

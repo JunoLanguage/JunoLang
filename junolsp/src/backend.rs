@@ -74,7 +74,10 @@ impl LanguageServer for Backend {
             diagnostics::publish(self, params.text_document.uri).await;
         }
     }
-
+    async fn did_save(&self, params: DidSaveTextDocumentParams) {
+        diagnostics::publish(self, params.text_document.uri).await;
+    }
+    async fn did_change_watched_files(&self, _params: DidChangeWatchedFilesParams) {}
     async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
         completion::completion(self, params).await
     }

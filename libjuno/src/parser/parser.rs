@@ -255,7 +255,10 @@ fn parse_primary(pair: JunoPair) -> Result<Expr, Error<Rule>> {
     match first.as_rule() {
         Rule::expr => parse_expr(first),
 
-        Rule::number => Ok(Expr::Number(first.as_str().parse().unwrap())),
+        Rule::number => Ok(Expr::Number(match first.as_str().parse() {
+            Err(e) => return Err(Error::new_from_span(ErrorVariant::CustomError { message: format!("{}", e) }, first.as_span())),
+            Ok(n) => n
+        })),
 
         Rule::boolean => Ok(Expr::Boolean(first.as_str() == "true")),
 

@@ -39,4 +39,6 @@ irgen = ["metair",
 
 compiler = ["irgen"]
 
-all = ["compiler"]
+diagnostics = []
+
+all = ["compiler", "diagnostics"]

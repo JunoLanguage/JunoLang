@@ -6,14 +6,7 @@ use tower_lsp::lsp_types::{
     Url,
 };
 
-use libjuno::{
-    pest::{
-        error::LineColLocation,
-        Parser,
-    },
-    JunoParser,
-    Rule,
-};
+use libjuno::diagnostics;
 
 use crate::backend::Backend;
 
@@ -21,16 +14,17 @@ pub async fn publish(
     backend: &Backend,
     uri: Url,
 ) {
+
     let Some(source) = backend.workspace.source(&uri) else {
         return;
     };
 
-    let diagnostics = match JunoParser::parse(Rule::program, &source) {
-        Ok(_) => Vec::new(),
-        Err(error) => {
-            vec![pest_error_to_diagnostic(error)]
-        }
-    };
+    let diagnostics = diagnostics::analyze(&source);
+
+    let diagnostics = diagnostics
+        .into_iter()
+        .map(to_lsp)
+        .collect();
 
     backend
         .client
@@ -38,44 +32,36 @@ pub async fn publish(
         .await;
 }
 
-fn pest_error_to_diagnostic(
-    error: libjuno::pest::error::Error<Rule>,
-) -> Diagnostic {
 
-    let range = match error.line_col {
+fn to_lsp(
+    diagnostic: libjuno::diagnostics::Diagnostic,
+) -> tower_lsp::lsp_types::Diagnostic {
 
-        LineColLocation::Pos((line, column)) => {
-            Range {
-                start: Position {
-                    line: (line - 1) as u32,
-                    character: (column - 1) as u32,
-                },
-                end: Position {
-                    line: (line - 1) as u32,
-                    character: column as u32,
-                },
-            }
-        }
-
-        LineColLocation::Span((start_line, start_column), (end_line, end_column)) => {
-            Range {
-                start: Position {
-                    line: (start_line - 1) as u32,
-                    character: (start_column - 1) as u32,
-                },
-                end: Position {
-                    line: (end_line - 1) as u32,
-                    character: (end_column - 1) as u32,
-                },
-            }
-        }
-    };
+    use tower_lsp::lsp_types::*;
 
     Diagnostic {
-        range,
-        severity: Some(DiagnosticSeverity::ERROR),
+        range: Range {
+            start: Position {
+                line: diagnostic.span.start.line as u32,
+                character: diagnostic.span.start.column as u32,
+            },
+            end: Position {
+                line: diagnostic.span.end.line as u32,
+                character: diagnostic.span.end.column as u32,
+            },
+        },
+
+        severity: Some(match diagnostic.severity {
+            libjuno::diagnostics::Severity::Error => DiagnosticSeverity::ERROR,
+            libjuno::diagnostics::Severity::Warning => DiagnosticSeverity::WARNING,
+            libjuno::diagnostics::Severity::Info => DiagnosticSeverity::INFORMATION,
+            libjuno::diagnostics::Severity::Hint => DiagnosticSeverity::HINT,
+        }),
+
         source: Some("junolsp".into()),
-        message: error.to_string(),
+
+        message: diagnostic.message,
+
         ..Default::default()
     }
 }

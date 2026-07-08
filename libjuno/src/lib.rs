@@ -34,6 +34,8 @@ pub mod compile;
 #[cfg(feature = "compiler")]
 pub use compile::*;
 
+#[cfg(feature = "diagnostics")]
+pub mod diagnostics;
 
 pub mod builtin_registry;
 pub use builtin_registry::*;
