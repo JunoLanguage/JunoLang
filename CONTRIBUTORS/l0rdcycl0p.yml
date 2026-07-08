@@ -1,0 +1,78 @@
+id: l0rdcycl0p
+display_name: L0rd Cycl0p
+
+real_name: null
+email: null
+
+profiles:
+  github: L0rdCycl0p
+  gitlab: null
+  website: null
+
+bio: |
+  I am a German software developer with a passion for computer science.
+
+roles:
+  - maintainer
+  - developer
+
+areas:
+  - core
+  - parser
+  - documentation
+
+joined: 2026
+
+skills:
+  languages:
+    - Python
+    - JavaScript
+    - TypeScript
+    - Kotlin
+    - Java
+    - Go
+    - Rust
+    - C
+    - C++
+    - C#
+    - Assembly
+    - HTML
+    - CSS
+    - Erlang
+    - Elixir
+
+  concepts:
+    - Lambda Calculus
+    - IPC
+    - Compiler Design
+    - Web Development
+    - Databases
+
+location:
+  timezone: Europe/Berlin
+  country: DE
+
+contact:
+  preferred: github
+
+agreements:
+  cla: true
+  dco: true
+
+notes: |
+  Prefer communication via GitHub Issues.
+
+markdown: |
+  # Hi, I'm L0rd Cycl0p 👋
+
+  I'm a German software developer and the creator of this project.
+
+  My interests include:
+  - Programming languages
+  - Compilers
+  - Operating systems
+  - Functional programming
+  - Open source
+
+  Thanks for checking out this project!
+  
