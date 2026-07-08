@@ -7,11 +7,11 @@ use std::{collections::HashMap, fmt};
 pub type SymbolId = u32;
 pub type StringId = u32;
 pub type FunctionId = u32;
-
+pub type TypeId = u32;
 // =======================
 // Program
 // =======================
-pub type TypeId = u32;
+
 
 #[derive(Debug, Clone)]
 pub struct MetaStruct {

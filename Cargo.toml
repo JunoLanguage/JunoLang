@@ -4,7 +4,7 @@ members = ["libjuno", "junocc", "junolsp"]
 resolver = "3"
 
 [workspace.package]
-version = "0.1.8"
+version = "0.1.9"
 edition = "2024"
 license-file = "LICENSE"
 authors = ["L0rdCyclp"]
@@ -33,5 +33,5 @@ dashmap = "6.2.1"
 
 
 [workspace.dependencies.libjuno]
-version = "0.1.8"
+version = "0.1.9"
 path = "libjuno"

@@ -40,4 +40,3 @@ irgen = ["metair",
 compiler = ["irgen"]
 
 all = ["compiler"]
-default = ["all"]

@@ -1,5 +1,6 @@
 use phf_macros::phf_map;
-use crate::{ ast::Type, * };
+use crate::*;
+use crate::SymbolId;
 
 pub struct Builtin {
     pub id: SymbolId,
