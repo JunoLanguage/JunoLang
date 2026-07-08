@@ -13,9 +13,13 @@ categories.workspace = true
 
 [dependencies]
 dashmap.workspace = true
-libjuno.workspace = true
 tokio.workspace = true
 tower-lsp.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 url.workspace = true
+[dependencies.libjuno]
+workspace = true
+features = [
+    "ast"
+]

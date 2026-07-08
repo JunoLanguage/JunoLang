@@ -470,7 +470,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "junocc"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "clap",
  "libjuno",
@@ -478,7 +478,7 @@ dependencies = [
 
 [[package]]
 name = "junolsp"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "dashmap 6.2.1",
  "libjuno",
@@ -503,7 +503,7 @@ checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
 name = "libjuno"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "inkwell",
  "llvm-sys 181.3.0",

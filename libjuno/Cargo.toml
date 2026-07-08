@@ -17,9 +17,27 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-inkwell.workspace = true
-llvm-sys.workspace = true
+inkwell = {workspace = true, optional = true}
+llvm-sys = {workspace = true, optional = true}
 pest.workspace = true
 pest_derive.workspace = true
 phf.workspace = true
 phf_macros.workspace = true
+
+
+[features]
+grammar = []
+
+ast = ["grammar"]
+
+metair = ["ast"]
+
+irgen = ["metair",
+    "inkwell",
+    "llvm-sys",
+]
+
+compiler = ["irgen"]
+
+all = ["compiler"]
+default = ["all"]
