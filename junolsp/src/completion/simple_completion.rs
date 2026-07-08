@@ -2,22 +2,12 @@ use tower_lsp::{ jsonrpc::Result, lsp_types::* };
 use libjuno::{ BuiltinEnum, REGISTRY };
 use crate::backend::Backend;
 
-pub async fn completion(
-    _backend: &Backend,
-    _params: CompletionParams
-) -> Result<Option<CompletionResponse>> {
-    let mut items = keywords();
-    items.append(&mut builtins());
-    items.append(&mut snippets());
-
-    Ok(Some(CompletionResponse::Array(items)))
-}
-fn snippets() -> Vec<CompletionItem> {
+pub(super) fn snippets() -> Vec<CompletionItem> {
     vec![
         CompletionItem {
             label: "fn".into(),
             kind: Some(CompletionItemKind::SNIPPET),
-            insert_text: Some("fn ${1:name}(${2}) {\n\t$0\n}".into()),
+            insert_text: Some("fn ${1:name}(${2}) {\n\t${0}\n}".into()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
             detail: Some("Function".into()),
             ..Default::default()
@@ -25,7 +15,7 @@ fn snippets() -> Vec<CompletionItem> {
         CompletionItem {
             label: "let".into(),
             kind: Some(CompletionItemKind::SNIPPET),
-            insert_text: Some("let ${1:mut} ${2:name} = $0;".into()),
+            insert_text: Some("let ${1:mut} ${2:name} = ${0};".into()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
             detail: Some("Let".into()),
             ..Default::default()
@@ -33,7 +23,7 @@ fn snippets() -> Vec<CompletionItem> {
         CompletionItem {
             label: "return".into(),
             kind: Some(CompletionItemKind::SNIPPET),
-            insert_text: Some("return $0;".into()),
+            insert_text: Some("return ${0};".into()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
             detail: Some("Return a value".into()),
             ..Default::default()
@@ -57,7 +47,7 @@ fn snippets() -> Vec<CompletionItem> {
         CompletionItem {
             label: "loop".into(),
             kind: Some(CompletionItemKind::SNIPPET),
-            insert_text: Some("loop {\n\t$0\n}".into()),
+            insert_text: Some("loop {\n\t${0}\n}".into()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
             detail: Some("Loop".into()),
             ..Default::default()
@@ -65,7 +55,7 @@ fn snippets() -> Vec<CompletionItem> {
         CompletionItem {
             label: "while".into(),
             kind: Some(CompletionItemKind::SNIPPET),
-            insert_text: Some("while ($1) {\n\t$0\n}".into()),
+            insert_text: Some("while (${1}) {\n\t${0}\n}".into()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
             detail: Some("While".into()),
             ..Default::default()
@@ -73,7 +63,7 @@ fn snippets() -> Vec<CompletionItem> {
         CompletionItem {
             label: "if".into(),
             kind: Some(CompletionItemKind::SNIPPET),
-            insert_text: Some("if ($1) {\n\t$0\n}".into()),
+            insert_text: Some("if (${1}) {\n\t${0}\n}".into()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
             detail: Some("If".into()),
             ..Default::default()
@@ -81,7 +71,7 @@ fn snippets() -> Vec<CompletionItem> {
         CompletionItem {
             label: "elif".into(),
             kind: Some(CompletionItemKind::SNIPPET),
-            insert_text: Some("else if ($1) {\n\t$0\n}".into()),
+            insert_text: Some("else if (${1}) {\n\t${0}\n}".into()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
             detail: Some("else if".into()),
             ..Default::default()
@@ -89,14 +79,14 @@ fn snippets() -> Vec<CompletionItem> {
         CompletionItem {
             label: "else".into(),
             kind: Some(CompletionItemKind::SNIPPET),
-            insert_text: Some("else {\n\t$0\n}".into()),
+            insert_text: Some("else {\n\t${0}\n}".into()),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
             detail: Some("else".into()),
             ..Default::default()
         }
     ]
 }
-fn builtins() -> Vec<CompletionItem> {
+pub(super) fn builtins() -> Vec<CompletionItem> {
     let mut items = vec![];
 
     for (name, i) in REGISTRY.entries().into_iter() {
@@ -104,8 +94,8 @@ fn builtins() -> Vec<CompletionItem> {
             BuiltinEnum::Function { param_types, return_type: _ } => {
                 let param_len = param_types.unwrap_or(&[]).len();
                 let mut param_text_v = vec![];
-                for p in 0..param_len - 1 {
-                    param_text_v.push(format!("${}", p));
+                for p in 0..param_len {
+                    param_text_v.push(format!("${{{}}}", p + 1));
                 }
                 let param_text = param_text_v.join(", ");
                 let insert_text = format!("{name}({param_text});");
@@ -126,7 +116,7 @@ fn builtins() -> Vec<CompletionItem> {
     items
 }
 
-fn keywords() -> Vec<CompletionItem> {
+pub(super) fn keywords() -> Vec<CompletionItem> {
     vec![
         CompletionItem {
             label: "fn".into(),

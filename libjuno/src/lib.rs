@@ -2,7 +2,7 @@
 
 mod grammar;
 mod parser;
-mod ast;
+pub mod ast;
 mod metair;
 mod ir;
 mod builtin_registry;

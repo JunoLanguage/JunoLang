@@ -62,22 +62,16 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        self.client.log_message(
-            MessageType::INFO,
-            format!("Opened {}", params.text_document.uri)
-        ).await;
+        self.workspace.open(params.text_document.uri.clone(), params.text_document.text);
 
-        self.workspace.open(params.text_document.uri, params.text_document.text);
+        diagnostics::publish(self, params.text_document.uri).await;
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         if let Some(change) = params.content_changes.first() {
-            self.client.log_message(
-                MessageType::INFO,
-                format!("Changed ({} bytes)", change.text.len())
-            ).await;
-
             self.workspace.update(params.text_document.uri.clone(), change.text.clone());
+
+            diagnostics::publish(self, params.text_document.uri).await;
         }
     }
 
