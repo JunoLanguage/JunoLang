@@ -1,0 +1,71 @@
+labels:
+  ci:
+    color: "1D76DB"
+    description: "Changes to GitHub workflows or CI configuration."
+    paths:
+      - ".github/**"
+
+  contributors:
+    color: "5319E7"
+    description: "Changes to contributor metadata."
+    paths:
+      - "CONTRIBUTORS/**"
+  dependencies:
+    color: "0366D6"
+    description: "Dependency updates."
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+  documentation:
+    color: "0075CA"
+    description: "Documentation changes."
+    paths:
+      - "README.md"
+      - "docs/**"
+
+  license:
+    color: "B60205"
+    description: "Changes related to licensing."
+    paths:
+      - "LICENSE"
+
+  nix:
+    color: "7E57C2"
+    description: "Nix configuration changes."
+    paths:
+      - "flake.nix"
+
+  compiler:
+    color: "FBCA04"
+    description: "Compiler-related changes."
+    paths:
+      - "src/**"
+
+  parser:
+    color: "0E8A16"
+    description: "Parser changes."
+    paths:
+      - "src/parser/**"
+
+  lexer:
+    color: "C2E0C6"
+    description: "Lexer changes."
+    paths:
+      - "src/lexer/**"
+
+  tests:
+    color: "D4C5F9"
+    description: "Test changes."
+    paths:
+      - "tests/**"
+
+  examples:
+    color: "F9D0C4"
+    description: "Example code."
+    paths:
+      - "examples/**"
+
+  my-first-contribution:
+    color: "7057FF"
+    description: "Contributor's first pull request."
+    paths: []

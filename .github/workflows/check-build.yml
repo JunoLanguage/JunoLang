@@ -1,0 +1,33 @@
+name: Check Build
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Check if the project builds
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        
+      - name: Check project
+        run: cargo check --locked --verbose
+
+      - name: Build project
+        run: cargo build --locked --verbose
