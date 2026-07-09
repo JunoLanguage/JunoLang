@@ -22,7 +22,6 @@ categories = ["compilers"]
 
 
 inkwell = { version = "0.9.0", features = ["llvm22-1"] }
-llvm-sys = "181.3.0"
 pest = "2.8.6"
 pest_derive = "2.8.6"
 phf = "0.14.0"

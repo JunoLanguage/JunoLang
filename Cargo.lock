@@ -441,7 +441,7 @@ dependencies = [
  "bitflags 2.13.0",
  "inkwell_internals",
  "libc",
- "llvm-sys 221.0.1",
+ "llvm-sys",
  "thiserror",
 ]
 
@@ -506,7 +506,6 @@ name = "libjuno"
 version = "0.1.10"
 dependencies = [
  "inkwell",
- "llvm-sys 181.3.0",
  "pest",
  "pest_derive",
  "phf",
@@ -518,20 +517,6 @@ name = "litemap"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92daf443525c4cce67b150400bc2316076100ce0b3686209eb8cf3c31612e6f0"
-
-[[package]]
-name = "llvm-sys"
-version = "181.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e24aad69cbdb0c6ebe777262e9e6314dceba0d6e6a2a63e47563ccd293a2eda8"
-dependencies = [
- "anyhow",
- "cc",
- "lazy_static",
- "libc",
- "regex-lite",
- "semver",
-]
 
 [[package]]
 name = "llvm-sys"
