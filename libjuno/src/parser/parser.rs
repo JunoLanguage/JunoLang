@@ -18,16 +18,14 @@ impl JunoASTParser {
     fn new(namespace: String) -> JunoASTParser {
         return JunoASTParser {
             functions: HashMap::new(),
-            namespace
-        }
+            namespace,
+        };
     }
 }
 
-
-pub fn parse_program(pair: Pair<Rule>, namespace: String) -> Result<Program, Error<Rule>>{
+pub fn parse_program(pair: Pair<Rule>, namespace: String) -> Result<Program, Error<Rule>> {
     JunoASTParser::new(namespace).parse_program(pair)
 }
-
 
 impl JunoASTParser {
     pub fn parse_program(&mut self, _pair: Pair<Rule>) -> Result<Program, Error<Rule>> {
@@ -386,14 +384,13 @@ impl JunoASTParser {
     fn parse_call(&mut self, pair: Pair<Rule>) -> Result<Expr, Error<Rule>> {
         let mut inner = pair.into_inner();
 
-        let mut raw_target: String = self
-            .clean_ident(inner.next().unwrap().as_str());
+        let mut raw_target: String = self.clean_ident(inner.next().unwrap().as_str());
 
         let mut target = match self.functions.contains_key(&raw_target) {
             true => self.with_namespace(raw_target.clone()),
             false => raw_target,
         };
-        if *target == "main".to_string(){
+        if *target == "main".to_string() {
             target = "main".to_string();
         }
         let mut args = Vec::new();

@@ -24,7 +24,11 @@ pub struct SymbolDeclTable {
 
 pub fn get_symbols_from_file(p: &Path, pkg_name: String) -> SymbolDeclTable {
     let input = match std::fs::read_to_string(p) {
-        Err(e) => panic!("Error while reading file {} (ERR: {})", p.to_str().unwrap(), e),
+        Err(e) => panic!(
+            "Error while reading file {} (ERR: {})",
+            p.to_str().unwrap(),
+            e
+        ),
         Ok(s) => s,
     };
     let namespace = path_to_namespace(p, Some(pkg_name));

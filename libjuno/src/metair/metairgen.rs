@@ -152,7 +152,10 @@ impl<'a> MetaIRGen<'a> {
             let sym = self.intern_symbol(&p.name);
             let ty = self.lower_type(&p.ty);
 
-            self.locals.last_mut().unwrap().insert(sym.clone(), ty.clone());
+            self.locals
+                .last_mut()
+                .unwrap()
+                .insert(sym.clone(), ty.clone());
 
             params.push(MetaParam { name: sym, ty });
         }
@@ -297,8 +300,6 @@ impl<'a> MetaIRGen<'a> {
         }
     }
     fn lower_struct(&mut self, s: &StructDef) -> MetaStruct {
-        
-
         let s = MetaStruct {
             name: self.intern_symbol(&s.name),
             fields: s

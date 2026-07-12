@@ -22,7 +22,6 @@ impl<'ctx> LLVMBackend<'ctx> {
         Ok(())
     }
 
-
     pub fn add_struct(&mut self, id: SymbolId, ty: &StructType<'ctx>) -> Result<(), LLVMError> {
         self.structs.insert(id, *ty);
         Ok(())
@@ -35,13 +34,9 @@ impl<'ctx> LLVMBackend<'ctx> {
             ));
         }
 
-        
-
-        self.structs.get(&target).copied().ok_or_else(|| {
-            LLVMError::Message(format!(
-                "unknown struct '{}'",
-                target
-            ))
-        })
+        self.structs
+            .get(&target)
+            .copied()
+            .ok_or_else(|| LLVMError::Message(format!("unknown struct '{}'", target)))
     }
 }

@@ -29,8 +29,9 @@ impl<'ctx> LLVMBackend<'ctx> {
             None => self.context.void_type().fn_type(&params, false),
         };
 
-
-        let llvm_function = self.module.add_function(function.name.as_str(), fn_type, None);
+        let llvm_function = self
+            .module
+            .add_function(function.name.as_str(), fn_type, None);
 
         self.functions.insert(function.name.clone(), llvm_function);
 
@@ -114,10 +115,6 @@ impl<'ctx> LLVMBackend<'ctx> {
         if let Some(f) = self.functions.get(&id) {
             return Ok(*f);
         }
-        Err(LLVMError::Message(format!(
-                "unknown function '{}'",
-                id
-        )))
-
+        Err(LLVMError::Message(format!("unknown function '{}'", id)))
     }
 }

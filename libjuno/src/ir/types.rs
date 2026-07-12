@@ -23,39 +23,37 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
             MetaType::Array { elem, size } => Ok(self.lower_type(elem)?.array_type(*size).into()),
 
-            MetaType::Named(id) => {
-                match id.as_str() {
-                    "bool" => Ok(self.context.bool_type().into()),
+            MetaType::Named(id) => match id.as_str() {
+                "bool" => Ok(self.context.bool_type().into()),
 
-                    "char" => Ok(self.context.i8_type().into()),
-                    "str" => Ok(self.context.i32_type().into()),
-                    "i8" => Ok(self.context.i8_type().into()),
-                    "i16" => Ok(self.context.i16_type().into()),
-                    "i32" => Ok(self.context.i32_type().into()),
-                    "i64" => Ok(self.context.i64_type().into()),
+                "char" => Ok(self.context.i8_type().into()),
+                "str" => Ok(self.context.i32_type().into()),
+                "i8" => Ok(self.context.i8_type().into()),
+                "i16" => Ok(self.context.i16_type().into()),
+                "i32" => Ok(self.context.i32_type().into()),
+                "i64" => Ok(self.context.i64_type().into()),
 
-                    "u8" => Ok(self.context.i8_type().into()),
-                    "u16" => Ok(self.context.i16_type().into()),
-                    "u32" => Ok(self.context.i32_type().into()),
-                    "u64" => Ok(self.context.i64_type().into()),
+                "u8" => Ok(self.context.i8_type().into()),
+                "u16" => Ok(self.context.i16_type().into()),
+                "u32" => Ok(self.context.i32_type().into()),
+                "u64" => Ok(self.context.i64_type().into()),
 
-                    "f32" => Ok(self.context.f32_type().into()),
-                    "f64" => Ok(self.context.f64_type().into()),
+                "f32" => Ok(self.context.f32_type().into()),
+                "f64" => Ok(self.context.f64_type().into()),
 
-                    _ => {
-                        if self.program.structs.get(id).is_some() {
-                            if !self.structs.contains_key(id) {
-                                self.lower_struct(&self.program.structs[&id.clone()])?;
-                            }
-                            return match self.get_struct(id.clone()) {
-                                Err(e) => Err(e),
-                                Ok(s) => Ok(s.into()),
-                            };
+                _ => {
+                    if self.program.structs.get(id).is_some() {
+                        if !self.structs.contains_key(id) {
+                            self.lower_struct(&self.program.structs[&id.clone()])?;
                         }
-                        Err(LLVMError::UnknownType(id.clone()))
+                        return match self.get_struct(id.clone()) {
+                            Err(e) => Err(e),
+                            Ok(s) => Ok(s.into()),
+                        };
                     }
+                    Err(LLVMError::UnknownType(id.clone()))
                 }
-            }
+            },
             MetaType::Unit => todo!(), //e => Err(LLVMError::Message(format!("type not implemented: {:#?}", e).into())),
         }
     }

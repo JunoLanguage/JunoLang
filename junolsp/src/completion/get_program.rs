@@ -26,14 +26,15 @@ pub(super) fn get_program(backend: &Backend, params: CompletionParams) -> Result
             return Err(Error::new(ErrorKind::Other, "oh no!"));
         }
     };
-    let expr_owned = match parse_program(pairs.into_iter().next().unwrap(), "debug::lsp".to_string()) {
-        Ok(e) => e,
-        Err(e) => {
-            backend
-                .client
-                .log_message(MessageType::ERROR, format!("{}", e));
-            return Err(Error::new(ErrorKind::Other, "oh no!"));
-        }
-    };
+    let expr_owned =
+        match parse_program(pairs.into_iter().next().unwrap(), "debug::lsp".to_string()) {
+            Ok(e) => e,
+            Err(e) => {
+                backend
+                    .client
+                    .log_message(MessageType::ERROR, format!("{}", e));
+                return Err(Error::new(ErrorKind::Other, "oh no!"));
+            }
+        };
     Ok(expr_owned)
 }
