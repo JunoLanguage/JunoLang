@@ -4,17 +4,16 @@ use std::{collections::HashMap, fmt};
 // IDs
 // =======================
 
-pub type SymbolId = u32;
+pub type SymbolId = String;
 pub type StringId = u32;
-pub type FunctionId = u32;
-pub type TypeId = u32;
+pub type FunctionId = String;
+pub type TypeId = String;
 // =======================
 // Program
 // =======================
 
 #[derive(Debug, Clone)]
 pub struct MetaStruct {
-    pub id: TypeId,
     pub name: SymbolId,
     pub fields: Vec<MetaField>,
 }
@@ -27,8 +26,8 @@ pub struct MetaField {
 
 #[derive(Debug, Clone)]
 pub struct MetaProgram {
-    pub functions: Vec<MetaFunction>,
-    pub structs: Vec<MetaStruct>,
+    pub functions: HashMap<SymbolId, MetaFunction>,
+    pub structs: HashMap<SymbolId, MetaStruct>,
     pub struct_fields: HashMap<SymbolId, Vec<String>>,
     pub string_table: Vec<String>,
     pub symbol_table: Vec<String>,
@@ -40,7 +39,6 @@ pub struct MetaProgram {
 
 #[derive(Debug, Clone)]
 pub struct MetaFunction {
-    pub id: FunctionId,
     pub name: SymbolId,
     pub params: Vec<MetaParam>,
     pub ret: Option<MetaType>,
@@ -107,7 +105,7 @@ pub enum MetaExprKind {
     String(StringId),
 
     Call {
-        target: Vec<SymbolId>,
+        target: SymbolId,
         args: Vec<MetaArg>,
     },
 
@@ -128,7 +126,7 @@ pub enum MetaExprKind {
 
     StructInit {
         name: SymbolId,
-        fields: Vec<(SymbolId, MetaExpr)>,
+        fields: Vec<(u32, MetaExpr)>,
     },
 }
 #[derive(Debug, Clone)]

@@ -13,10 +13,10 @@ impl<'ctx> LLVMBackend<'ctx> {
             MetaExprKind::Unary { op, expr } => self.lower_unary(op, expr),
 
             MetaExprKind::Call { target, args } => self
-                .lower_call(target, args)?
+                .lower_call(target.clone(), args)?
                 .ok_or_else(|| LLVMError::Message("void function used as expression".into())),
 
-            MetaExprKind::String(id) => self.lower_string(*id),
+            MetaExprKind::String(id) => self.lower_string(id.clone()),
 
             MetaExprKind::Array(inner) => {
                 let mut items = Vec::new();
@@ -73,20 +73,20 @@ impl<'ctx> LLVMBackend<'ctx> {
             },
 
             MetaExprKind::Var(id) => {
-                let var = self.get_variable(*id)?;
+                let var = self.get_variable(id.clone())?;
                 Ok(self
                     .builder
-                    .build_load(var.ty, var.ptr, &self.program.symbol_table[*id as usize])
+                    .build_load(var.ty, var.ptr, id)
                     .map_err(|e| LLVMError::Message(e.to_string()))?)
             }
             MetaExprKind::StructInit { name, fields } => {
-                let s = self.get_struct(&[*name])?;
+                let s = self.get_struct(name.clone())?;
                 let s_ptr = self.builder.build_alloca(s, "tmp").unwrap();
 
                 for (idx, expr) in fields {
                     let gep = self
                         .builder
-                        .build_struct_gep(s, s_ptr, *idx, "field")
+                        .build_struct_gep(s, s_ptr, idx.clone(), "field")
                         .unwrap();
                     let value = self.lower_expr(expr)?;
                     self.builder.build_store(gep, value).unwrap();
@@ -131,7 +131,7 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
 
             MetaUnOp::Ref => match &expr.kind {
-                MetaExprKind::Var(id) => Ok(self.get_variable(*id)?.ptr.into()),
+                MetaExprKind::Var(id) => Ok(self.get_variable(id.clone())?.ptr.into()),
 
                 _ => Err(LLVMError::Message("reference requires a variable".into())),
             },
@@ -173,7 +173,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
     pub fn lower_call(
         &mut self,
-        target: &[SymbolId],
+        target: SymbolId,
         args: &[MetaArg],
     ) -> Result<Option<BasicValueEnum<'ctx>>, LLVMError> {
         let function = self.get_function(target)?;

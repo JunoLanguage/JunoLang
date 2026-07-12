@@ -27,7 +27,7 @@ pub struct MetaIRGen<'a> {
 
 impl MetaProgram {
     pub fn get_struct(&self, name: SymbolId) -> Option<&MetaStruct> {
-        self.structs.iter().find(|s| s.name == name)
+        self.structs.get(&name)
     }
 }
 
@@ -55,40 +55,27 @@ impl<'a> MetaIRGen<'a> {
     // =======================
 
     pub(in crate::metair) fn intern_symbol(&mut self, s: &str) -> SymbolId {
-        if let Some(id) = self.symbols.get(s) {
-            return *id;
-        }
-        if is_builtin(s) {
-            return get_builtin_id(s);
-        }
-
-        let id = self.next_symbol;
-        self.next_symbol += 1;
-
-        self.symbols.insert(s.to_string(), id);
-        self.symbol_list.push(s.to_string());
-
-        id
+        return s.to_string();
     }
     fn intern_struct_field(&mut self, struct_id: SymbolId, field_name: &str) -> u32 {
         if let Some(fields) = self.struct_fields.get(&struct_id) {
             if let Some(id) = fields.get(field_name) {
-                return *id;
+                return id.clone();
             }
         } else {
-            self.struct_fields.insert(struct_id, HashMap::new());
+            self.struct_fields.insert(struct_id.clone(), HashMap::new());
         }
         let id = self.next_struct_field;
         self.next_struct_field += 1;
 
-        let fields = &mut self.struct_fields.get_mut(&struct_id).unwrap();
+        let fields = &mut self.struct_fields.get_mut(&struct_id.clone()).unwrap();
         fields.insert(field_name.to_string(), id);
 
         id
     }
     fn intern_string(&mut self, s: &str) -> StringId {
         if let Some(id) = self.strings.get(s) {
-            return *id;
+            return id.clone();
         }
 
         let id = self.next_string;
@@ -113,17 +100,17 @@ impl<'a> MetaIRGen<'a> {
 
     pub fn lower_program(&mut self, p: &'a Program) -> MetaProgram {
         self.program = p;
-        let mut functions = Vec::new();
-        let mut structs = Vec::new();
+        let mut functions = HashMap::new();
+        let mut structs = HashMap::new();
 
         for item in &p.items {
             match item {
                 Item::Function(f) => {
-                    functions.push(self.lower_function(f));
+                    functions.insert(f.name.clone(), self.lower_function(f));
                 }
 
                 Item::Struct(s) => {
-                    structs.push(self.lower_struct(s));
+                    structs.insert(s.name.clone(), self.lower_struct(s));
                 }
 
                 Item::Import(_) => {}
@@ -165,7 +152,7 @@ impl<'a> MetaIRGen<'a> {
             let sym = self.intern_symbol(&p.name);
             let ty = self.lower_type(&p.ty);
 
-            self.locals.last_mut().unwrap().insert(sym, ty.clone());
+            self.locals.last_mut().unwrap().insert(sym.clone(), ty.clone());
 
             params.push(MetaParam { name: sym, ty });
         }
@@ -177,7 +164,6 @@ impl<'a> MetaIRGen<'a> {
         self.locals.pop();
 
         let f = MetaFunction {
-            id,
             name,
             params,
             ret,
@@ -311,17 +297,15 @@ impl<'a> MetaIRGen<'a> {
         }
     }
     fn lower_struct(&mut self, s: &StructDef) -> MetaStruct {
-        let id = self.next_type;
-        self.next_type += 1;
+        
 
         let s = MetaStruct {
-            id,
             name: self.intern_symbol(&s.name),
             fields: s
                 .fields
                 .iter()
                 .map(|f| MetaField {
-                    index: self.intern_struct_field(id, &f.name),
+                    index: self.intern_struct_field(s.name.clone(), &f.name),
                     ty: self.lower_type(&f.ty),
                 })
                 .collect(),
@@ -361,10 +345,10 @@ impl<'a> MetaIRGen<'a> {
 
             Expr::Var(name) => {
                 let id = self.intern_symbol(name);
-                let ty = self.lookup_local_type(id);
+                let ty = self.lookup_local_type(id.clone());
 
                 MetaExpr {
-                    kind: MetaExprKind::Var(id),
+                    kind: MetaExprKind::Var(id.clone()),
                     ty,
                 }
             }
@@ -406,7 +390,7 @@ impl<'a> MetaIRGen<'a> {
 
             Expr::Call(c) => {
                 dbg!(&c.target);
-                let target: Vec<_> = c.target.iter().map(|s| self.intern_symbol(s)).collect();
+                let target: SymbolId = c.target.clone();
                 dbg!(&target);
                 let args: Vec<_> = c
                     .args
@@ -420,11 +404,9 @@ impl<'a> MetaIRGen<'a> {
                     })
                     .collect();
 
-                let target_name_string = c.target.join(".");
-                let target_name = target_name_string.as_str();
-                let ty: MetaType = match self.find_function(target_name) {
+                let ty: MetaType = match self.find_function(target.as_str()) {
                     None => {
-                        let builtin = builtin_registry::get_builtin(target_name);
+                        let builtin = builtin_registry::get_builtin(target.as_str());
                         match builtin {
                             None => {
                                 todo!()

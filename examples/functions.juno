@@ -4,7 +4,7 @@ fn exit_code() -> i32 {
 }
 
 fn hello_world() -> i32 {
-    printf("hello world");
+    printf("hello world\n");
     return 0;
 }
 

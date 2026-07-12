@@ -11,7 +11,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 mutable: _,
                 ty,
                 value,
-            } => self.lower_let(*name, ty.as_ref(), value.as_ref()),
+            } => self.lower_let(name.clone(), ty.as_ref(), value.as_ref()),
             MetaStmt::Break => self.lower_break(),
             MetaStmt::If {
                 cond,
@@ -22,14 +22,14 @@ impl<'ctx> LLVMBackend<'ctx> {
             MetaStmt::Continue => self.lower_continue(),
             MetaStmt::Loop { body } => self.lower_loop(body),
             MetaStmt::Return(expr) => self.lower_return(expr.as_ref()),
-            MetaStmt::Assign { target, value } => self.lower_assign(*target, value),
+            MetaStmt::Assign { target, value } => self.lower_assign(target.clone(), value),
             MetaStmt::Expr(expr) => self.lower_expr_stmt(expr),
         }
     }
     fn lower_expr_stmt(&mut self, expr: &MetaExpr) -> Result<(), LLVMError> {
         match &expr.kind {
             MetaExprKind::Call { target, args } => {
-                self.lower_call(&target, &args)?;
+                self.lower_call(target.clone(), &args)?;
             }
 
             _ => {
@@ -266,7 +266,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         let ptr = self
             .builder
-            .build_alloca(llvm_ty, &self.program.symbol_table[name as usize])
+            .build_alloca(llvm_ty, name.as_str())
             .map_err(|e| LLVMError::Message(e.to_string()))?;
 
         self.insert_variable(name, ptr, llvm_ty);

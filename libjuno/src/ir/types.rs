@@ -24,8 +24,7 @@ impl<'ctx> LLVMBackend<'ctx> {
             MetaType::Array { elem, size } => Ok(self.lower_type(elem)?.array_type(*size).into()),
 
             MetaType::Named(id) => {
-                let name = &self.program.symbol_table[*id as usize];
-                match name.as_str() {
+                match id.as_str() {
                     "bool" => Ok(self.context.bool_type().into()),
 
                     "char" => Ok(self.context.i8_type().into()),
@@ -44,16 +43,16 @@ impl<'ctx> LLVMBackend<'ctx> {
                     "f64" => Ok(self.context.f64_type().into()),
 
                     _ => {
-                        if self.program.structs.get(*id as usize).is_some() {
-                            if self.structs.get(id).is_none() {
-                                self.lower_struct(&self.program.structs[*id as usize])?;
+                        if self.program.structs.get(id).is_some() {
+                            if !self.structs.contains_key(id) {
+                                self.lower_struct(&self.program.structs[&id.clone()])?;
                             }
-                            return match self.get_struct(vec![*id].as_slice()) {
+                            return match self.get_struct(id.clone()) {
                                 Err(e) => Err(e),
                                 Ok(s) => Ok(s.into()),
                             };
                         }
-                        Err(LLVMError::UnknownType(*id))
+                        Err(LLVMError::UnknownType(id.clone()))
                     }
                 }
             }

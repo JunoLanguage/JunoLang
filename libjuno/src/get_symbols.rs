@@ -7,13 +7,11 @@ use crate::*;
 #[derive(Clone, Debug)]
 pub enum SymbolDecl {
     Function {
-        id: u32,
         name: String,
         params: Vec<MetaParam>,
         ret: Option<MetaType>,
     },
     Struct {
-        id: u32,
         name: String,
         fields: Vec<MetaField>,
     },
@@ -45,18 +43,16 @@ pub fn get_symbols(input: String, namespace: String) -> SymbolDeclTable {
     let metairgen = Box::leak(Box::new(MetaIRGen::new(expr)));
     let metair = Box::leak(Box::new(metairgen.lower_program(expr)));
     let mut symbols = vec![];
-    for f in &metair.functions {
+    for (f_name, f) in &metair.functions {
         symbols.push(SymbolDecl::Function {
-            id: f.id,
-            name: metairgen.symbol_list.get(f.id as usize).unwrap().clone(),
+            name: f.name.clone(),
             params: f.params.clone(),
             ret: f.ret.clone(),
         });
     }
-    for s in &metair.structs {
+    for (s_name, s) in &metair.structs {
         symbols.push(SymbolDecl::Struct {
-            id: s.id,
-            name: metairgen.symbol_list.get(s.id as usize).unwrap().clone(),
+            name: s.name.clone(),
             fields: s.fields.clone(),
         });
     }

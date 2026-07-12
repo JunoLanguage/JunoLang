@@ -2,13 +2,15 @@ use std::collections::HashMap;
 
 use inkwell::{types::BasicTypeEnum, values::PointerValue};
 
+use crate::SymbolId;
+
 pub struct Variable<'ctx> {
     pub ptr: PointerValue<'ctx>,
     pub ty: BasicTypeEnum<'ctx>,
 }
 
 pub struct Scope<'ctx> {
-    variables: HashMap<u32, Variable<'ctx>>,
+    variables: HashMap<SymbolId, Variable<'ctx>>,
 }
 
 impl<'ctx> Scope<'ctx> {
@@ -18,11 +20,11 @@ impl<'ctx> Scope<'ctx> {
         }
     }
 
-    pub fn insert(&mut self, id: u32, ptr: PointerValue<'ctx>, ty: BasicTypeEnum<'ctx>) {
+    pub fn insert(&mut self, id: SymbolId, ptr: PointerValue<'ctx>, ty: BasicTypeEnum<'ctx>) {
         self.variables.insert(id, Variable { ptr, ty });
     }
 
-    pub fn get(&self, id: u32) -> Option<&Variable<'ctx>> {
+    pub fn get(&self, id: SymbolId) -> Option<&Variable<'ctx>> {
         self.variables.get(&id)
     }
 }

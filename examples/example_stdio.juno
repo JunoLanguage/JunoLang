@@ -1,10 +1,11 @@
 
 
 fn main() -> i32 {
-    printf("hello from %s", "printf");
+    printf("hello from %s\n", "printf");
     puts("hello form puts");
     putchar('h');
     putchar('i');
+    putchar('\n');
     loop {
         let input: char = *"";
         printf("Reading your input (e to exit): ");
@@ -14,6 +15,6 @@ fn main() -> i32 {
         }
         printf("you entered: %s\n", &input);
     }
-    printf("exit loop succesfully");
+    printf("exit loop succesfully\n");
     return 0;
 }

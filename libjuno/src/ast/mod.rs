@@ -108,7 +108,7 @@ pub enum Expr {
 }
 #[derive(Debug, Clone)]
 pub struct Call {
-    pub target: Vec<String>,
+    pub target: String,
     pub args: Vec<Arg>,
 }
 

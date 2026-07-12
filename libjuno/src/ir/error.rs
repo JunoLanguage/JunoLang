@@ -3,8 +3,8 @@ use std::fmt;
 #[derive(Debug)]
 pub enum LLVMError {
     UnknownVariable(SymbolId),
-    UnknownFunction(u32),
-    UnknownType(u32),
+    UnknownFunction(SymbolId),
+    UnknownType(SymbolId),
 
     InvalidExpression,
 

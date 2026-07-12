@@ -3,7 +3,6 @@ use crate::*;
 use phf_macros::phf_map;
 
 pub struct Builtin {
-    pub id: SymbolId,
     pub declare: BuiltinEnum,
 }
 
@@ -16,7 +15,6 @@ pub enum BuiltinEnum {
 
 pub const REGISTRY: phf::Map<&'static str, Builtin> = phf_map! {
     "printf" => Builtin {
-        id: 0,
         declare: BuiltinEnum::Function {
             param_types: None,
             return_type: "void",
@@ -24,7 +22,6 @@ pub const REGISTRY: phf::Map<&'static str, Builtin> = phf_map! {
     },
 
     "puts" => Builtin {
-        id: 1,
         declare: BuiltinEnum::Function {
             param_types: Some(&["&u8"]),
             return_type: "void",
@@ -32,7 +29,6 @@ pub const REGISTRY: phf::Map<&'static str, Builtin> = phf_map! {
     },
 
     "putchar" => Builtin {
-        id: 2,
         declare: BuiltinEnum::Function {
             param_types: Some(&["u8"]),
             return_type: "u8",
@@ -40,14 +36,12 @@ pub const REGISTRY: phf::Map<&'static str, Builtin> = phf_map! {
     },
 
     "getchar" => Builtin {
-        id: 3,
         declare: BuiltinEnum::Function {
             param_types: Some(&[]),
             return_type: "i32",
         },
     },
     "scanf" => Builtin {
-        id: 4,
         declare: BuiltinEnum::Function {
             param_types: None,
             return_type: "u8",
@@ -61,7 +55,7 @@ pub fn is_builtin(name: &str) -> bool {
 }
 
 pub fn get_builtin_id(name: &str) -> SymbolId {
-    ((1 as u32) << 16) | REGISTRY.get(name).unwrap().id
+    name.to_string()
 }
 
 pub fn get_builtin(name: &str) -> Option<&Builtin> {

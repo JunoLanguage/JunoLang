@@ -8,5 +8,5 @@ fn fib(n: i32) -> i32 {
 }
 
 fn main() {
-    printf("%d", fib(10));
+    printf("%d\n", fib(10));
 }

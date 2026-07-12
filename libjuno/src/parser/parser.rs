@@ -386,21 +386,15 @@ impl JunoASTParser {
     fn parse_call(&mut self, pair: Pair<Rule>) -> Result<Expr, Error<Rule>> {
         let mut inner = pair.into_inner();
 
-        let mut raw_target: Vec<String> = self
-            .clean_ident(inner.next().unwrap().as_str())
-            .split('.')
-            .map(str::to_owned)
-            .collect();
+        let mut raw_target: String = self
+            .clean_ident(inner.next().unwrap().as_str());
 
-        let mut target = match self.functions.contains_key(raw_target.first().unwrap()) {
-            true => {
-                raw_target[0] = self.with_namespace(raw_target.first().unwrap().clone());
-                raw_target
-            }
+        let mut target = match self.functions.contains_key(&raw_target) {
+            true => self.with_namespace(raw_target.clone()),
             false => raw_target,
         };
-        if *target.first().unwrap() == "main".to_string(){
-            target[0] = "main".to_string();
+        if *target == "main".to_string(){
+            target = "main".to_string();
         }
         let mut args = Vec::new();
 

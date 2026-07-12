@@ -111,7 +111,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         id: SymbolId,
     ) -> Result<&crate::ir::scope::Variable<'ctx>, LLVMError> {
         for scope in self.scopes.iter().rev() {
-            if let Some(var) = scope.get(id) {
+            if let Some(var) = scope.get(id.clone()) {
                 return Ok(var);
             }
         }

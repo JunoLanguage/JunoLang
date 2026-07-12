@@ -8,11 +8,8 @@ use inkwell::types::BasicMetadataTypeEnum;
 
 impl<'ctx> LLVMBackend<'ctx> {
     pub fn lower_program(&mut self) -> Result<(), LLVMError> {
-        for function in &self.program.functions {
+        for (function_name, function) in &self.program.functions {
             self.declare_function(function)?;
-        }
-
-        for function in &self.program.functions {
             self.lower_function(function)?;
         }
 
@@ -32,11 +29,10 @@ impl<'ctx> LLVMBackend<'ctx> {
             None => self.context.void_type().fn_type(&params, false),
         };
 
-        let name = &self.program.symbol_table[function.name as usize];
 
-        let llvm_function = self.module.add_function(name, fn_type, None);
+        let llvm_function = self.module.add_function(function.name.as_str(), fn_type, None);
 
-        self.functions.insert(function.id, llvm_function);
+        self.functions.insert(function.name.clone(), llvm_function);
 
         Ok(())
     }
@@ -44,7 +40,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     fn lower_function(&mut self, function: &MetaFunction) -> Result<(), LLVMError> {
         self.declare_runtime();
 
-        let llvm_function = *self.functions.get(&function.id).unwrap();
+        let llvm_function = *self.functions.get(&function.name).unwrap();
         self.current_function = Some(llvm_function);
 
         let entry = self.context.append_basic_block(llvm_function, "entry");
@@ -57,19 +53,19 @@ impl<'ctx> LLVMBackend<'ctx> {
                 .get_nth_param(index as u32)
                 .ok_or_else(|| LLVMError::Message(format!("missing llvm parameter {}", index)))?;
 
-            llvm_param.set_name(&self.program.symbol_table[param.name as usize]);
+            llvm_param.set_name(&param.name.as_str());
 
             let llvm_type = self.lower_type(&param.ty)?;
             let ptr = self
                 .builder
-                .build_alloca(llvm_type, &self.program.symbol_table[param.name as usize])
+                .build_alloca(llvm_type, &param.name.as_str())
                 .map_err(|e| LLVMError::Message(e.to_string()))?;
 
             self.builder
                 .build_store(ptr, llvm_param)
                 .map_err(|e| LLVMError::Message(e.to_string()))?;
 
-            self.insert_variable(param.name, ptr, llvm_param.get_type());
+            self.insert_variable(param.name.clone(), ptr, llvm_param.get_type());
         }
 
         for stmt in &function.body {
@@ -87,7 +83,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 Some(_) => {
                     return Err(LLVMError::Message(format!(
                         "function '{}' is missing a return statement",
-                        self.program.symbol_table[function.name as usize]
+                        function.name.as_str()
                     )));
                 }
 
@@ -103,64 +99,25 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(())
     }
-    pub fn add_function_in_namespace(
-        &mut self,
-        namespace: u16,
-        id: u16,
-        function: &FunctionValue<'ctx>,
-    ) -> Result<(), LLVMError> {
-        let id = ((namespace as u32) << 16) | (id as u32);
-        self.functions.insert(id, *function);
-
-        Ok(())
-    }
     pub fn add_function(
         &mut self,
-        id: u32,
+        id: String,
         function: &FunctionValue<'ctx>,
     ) -> Result<(), LLVMError> {
         self.functions.insert(id, *function);
         Ok(())
     }
 
-    pub fn get_function_in_namespace(
-        &mut self,
-        namespace: u16,
-        id: u16,
-    ) -> Result<FunctionValue<'_>, LLVMError> {
-        let id = ((namespace as u32) << 16) | (id as u32);
+    pub fn get_function(&self, target: String) -> Result<FunctionValue<'ctx>, LLVMError> {
+        let id = target;
+
         if let Some(f) = self.functions.get(&id) {
             return Ok(*f);
         }
-
         Err(LLVMError::Message(format!(
-            "unknown function '{}'",
-            self.program.symbol_table[id as usize]
-        )))
-    }
-    pub fn get_function(&self, target: &[SymbolId]) -> Result<FunctionValue<'ctx>, LLVMError> {
-        if target.len() != 1 {
-            return Err(LLVMError::Message(
-                "qualified calls are not implemented".into(),
-            ));
-        }
-
-        let id = target[0];
-
-        if let Some(f) = self.functions.get(&id) {
-            return Ok(*f);
-        }
-        let namespace = (id >> 16) as u16;
-        let local_id = (id & 0xffff) as u32;
-        match namespace {
-            0 => Err(LLVMError::Message(format!(
                 "unknown function '{}'",
-                self.program.symbol_table[id as usize]
-            ))),
-            _ => Err(LLVMError::Message(format!(
-                "unknown function with id {} in namespace {}",
-                local_id, namespace
-            ))),
-        }
+                id
+        )))
+
     }
 }
