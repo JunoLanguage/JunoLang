@@ -1,3 +1,7 @@
+//This Source Code Form is subject to the terms of the Mozilla Public
+//License, v. 2.0. If a copy of the MPL was not distributed with this
+//file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 use std::path::Path;
 
 use pest::Parser;
@@ -32,17 +36,28 @@ pub fn get_symbols_from_file(p: &Path, pkg_name: String) -> SymbolDeclTable {
         Ok(s) => s,
     };
     let namespace = path_to_namespace(p, Some(pkg_name));
-    get_symbols(input, namespace)
+    get_symbols(
+        input,
+        namespace,
+        Some(p.to_str().unwrap_or("<unknown>").to_string()),
+    )
 }
 
-pub fn get_symbols(input: String, namespace: String) -> SymbolDeclTable {
+pub fn get_symbols(input: String, namespace: String, filename: Option<String>) -> SymbolDeclTable {
+    let filename = filename.unwrap_or("<unknown>".to_string());
     let pairs = match JunoParser::parse(Rule::program, &input.as_str()) {
         Ok(pairs) => pairs,
         Err(e) => {
             panic!("{e}");
         }
     };
-    let expr_owned = parse_program(pairs.into_iter().next().unwrap(), namespace).unwrap();
+    let expr_owned = parse_program(
+        pairs.into_iter().next().unwrap(),
+        namespace,
+        input.clone().into(),
+        filename.into(),
+    )
+    .unwrap();
     let expr = Box::leak(Box::new(expr_owned));
     let metairgen = Box::leak(Box::new(MetaIRGen::new(expr)));
     let metair = Box::leak(Box::new(metairgen.lower_program(expr)));

@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{ast::JunoSpan, *};
 use std::fmt;
 #[derive(Debug)]
 pub enum LLVMError {
@@ -9,6 +9,8 @@ pub enum LLVMError {
     InvalidExpression,
 
     Message(String),
+
+    SpanMessage(String, JunoSpan),
 }
 
 impl fmt::Display for LLVMError {
@@ -33,8 +35,22 @@ impl fmt::Display for LLVMError {
             LLVMError::Message(msg) => {
                 write!(f, "{msg}")
             }
+            LLVMError::SpanMessage(msg, span) => {
+                write!(f, "{:?}", span.err_to_report(msg))
+            }
         }
     }
 }
 
 impl std::error::Error for LLVMError {}
+
+impl From<inkwell::Error> for LLVMError {
+    fn from(value: inkwell::Error) -> Self {
+        Self::Message(format!("{:?}", value))
+    }
+}
+impl From<inkwell::builder::BuilderError> for LLVMError {
+    fn from(value: inkwell::builder::BuilderError) -> Self {
+        Self::Message(format!("{:?}", value))
+    }
+}

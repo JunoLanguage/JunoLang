@@ -8,7 +8,7 @@ members = ["libjuno", "junocc", "junolsp"]
 resolver = "3"
 
 [workspace.package]
-version = "0.1.12"
+version = "0.1.13"
 edition = "2024"
 license-file = "LICENSE"
 authors = ["L0rdCyclp"]
@@ -33,8 +33,9 @@ tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
 url = "2.5.8"
 dashmap = "6.2.1"
-
+anyhow = "1.0.103"
+miette = { version = "7.6.0", features = ["fancy"] }
 
 [workspace.dependencies.libjuno]
-version = "0.1.12"
+version = "0.1.13"
 path = "libjuno"

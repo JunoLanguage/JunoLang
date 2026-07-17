@@ -22,7 +22,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         let ty = self
             .context
             .i8_type()
-            .fn_type(&[self.context.i8_type().into()], false);
+            .fn_type(&[self.context.i32_type().into()], false);
 
         self.declare_builtin("putchar", ty);
     }

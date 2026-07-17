@@ -1,3 +1,4 @@
+use crate::ast::JunoSpan;
 use crate::metair::*;
 use inkwell::types::BasicType;
 use inkwell::values::FunctionValue;
@@ -9,12 +10,12 @@ use inkwell::types::BasicMetadataTypeEnum;
 impl<'ctx> LLVMBackend<'ctx> {
     pub fn lower_program(&mut self) -> Result<(), LLVMError> {
         for (declaration_name, declaration) in &self.program.declarations {
-            self.lower_declaration(declaration)?;
+            self.lower_declaration(declaration, &declaration.span)?;
         }
 
         for (function_name, function) in &self.program.functions {
             self.declare_function(function)?;
-            self.lower_function(function)?;
+            self.lower_function(function, &function.span)?;
         }
 
         Ok(())
@@ -24,11 +25,13 @@ impl<'ctx> LLVMBackend<'ctx> {
         let mut params = Vec::<BasicMetadataTypeEnum>::new();
 
         for param in &function.params {
-            params.push(self.lower_type(&param.ty)?.into());
+            params.push(self.lower_type(&param.ty, &param.span)?.into());
         }
 
         let fn_type = match &function.ret {
-            Some(ret) => self.lower_type(ret)?.fn_type(&params, false),
+            Some(ret) => self
+                .lower_type(ret, &function.span)?
+                .fn_type(&params, false),
 
             None => self.context.void_type().fn_type(&params, false),
         };
@@ -42,7 +45,11 @@ impl<'ctx> LLVMBackend<'ctx> {
         Ok(())
     }
 
-    fn lower_function(&mut self, function: &MetaFunction) -> Result<(), LLVMError> {
+    fn lower_function(
+        &mut self,
+        function: &MetaFunction,
+        span: &JunoSpan,
+    ) -> Result<(), LLVMError> {
         self.declare_runtime();
 
         let llvm_function = *self.functions.get(&function.name).unwrap();
@@ -54,27 +61,27 @@ impl<'ctx> LLVMBackend<'ctx> {
         self.push_scope();
 
         for (index, param) in function.params.iter().enumerate() {
-            let llvm_param = llvm_function
-                .get_nth_param(index as u32)
-                .ok_or_else(|| LLVMError::Message(format!("missing llvm parameter {}", index)))?;
+            let llvm_param = llvm_function.get_nth_param(index as u32).ok_or_else(|| {
+                LLVMError::SpanMessage(format!("missing llvm parameter {}", index), span.clone())
+            })?;
 
             llvm_param.set_name(&param.name.as_str());
 
-            let llvm_type = self.lower_type(&param.ty)?;
+            let llvm_type = self.lower_type(&param.ty, &param.span)?;
             let ptr = self
                 .builder
                 .build_alloca(llvm_type, &param.name.as_str())
-                .map_err(|e| LLVMError::Message(e.to_string()))?;
+                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
 
             self.builder
                 .build_store(ptr, llvm_param)
-                .map_err(|e| LLVMError::Message(e.to_string()))?;
+                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
 
             self.insert_variable(param.name.clone(), ptr, llvm_param.get_type());
         }
 
         for stmt in &function.body {
-            self.lower_stmt(stmt)?;
+            self.lower_stmt(stmt, &stmt.span())?;
         }
 
         if self
@@ -86,16 +93,19 @@ impl<'ctx> LLVMBackend<'ctx> {
         {
             match function.ret {
                 Some(_) => {
-                    return Err(LLVMError::Message(format!(
-                        "function '{}' is missing a return statement",
-                        function.name.as_str()
-                    )));
+                    return Err(LLVMError::SpanMessage(
+                        format!(
+                            "function '{}' is missing a return statement",
+                            function.name.as_str()
+                        ),
+                        span.clone(),
+                    ));
                 }
 
                 None => {
                     self.builder
                         .build_return(None)
-                        .map_err(|e| LLVMError::Message(e.to_string()))?;
+                        .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
                 }
             }
         }

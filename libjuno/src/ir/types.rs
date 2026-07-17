@@ -1,4 +1,4 @@
-use crate::metair::*;
+use crate::{ast::JunoSpan, metair::*};
 use inkwell::types::BasicType;
 
 use super::*;
@@ -6,24 +6,30 @@ use super::*;
 use inkwell::types::BasicTypeEnum;
 
 impl<'ctx> LLVMBackend<'ctx> {
-    pub fn lower_type(&mut self, ty: &MetaType) -> Result<BasicTypeEnum<'ctx>, LLVMError> {
+    pub fn lower_type(
+        &mut self,
+        ty: &MetaType,
+        span: &JunoSpan,
+    ) -> Result<BasicTypeEnum<'ctx>, LLVMError> {
         match ty {
-            MetaType::Pointer(inner) => {
+            MetaType::Pointer(inner, span) => {
                 Ok(self
-                    .lower_type(inner)?
+                    .lower_type(inner, span)?
                     .ptr_type(inkwell::AddressSpace::default())
                     .into()) // TODO ptr_type is deprecated, searching for alternative
             }
 
-            MetaType::Reference(inner) => {
+            MetaType::Reference(inner, span) => {
                 Ok(self
-                    .lower_type(inner)?
+                    .lower_type(inner, span)?
                     .ptr_type(inkwell::AddressSpace::default())
                     .into()) // TODO
             }
-            MetaType::Array { elem, size } => Ok(self.lower_type(elem)?.array_type(*size).into()),
+            MetaType::Array { elem, size, span } => {
+                Ok(self.lower_type(elem, span)?.array_type(*size).into())
+            }
 
-            MetaType::Named(id) => match id.as_str() {
+            MetaType::Named(id, span) => match id.as_str() {
                 "bool" => Ok(self.context.bool_type().into()),
 
                 "char" => Ok(self.context.i8_type().into()),
@@ -44,7 +50,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 _ => {
                     if self.program.structs.get(id).is_some() {
                         if !self.structs.contains_key(id) {
-                            self.lower_struct(&self.program.structs[&id.clone()])?;
+                            self.lower_struct(&self.program.structs[&id.clone()], span)?;
                         }
                         return match self.get_struct(id.clone()) {
                             Err(e) => Err(e),
@@ -54,7 +60,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                     Err(LLVMError::UnknownType(id.clone()))
                 }
             },
-            MetaType::Unit => todo!(), //e => Err(LLVMError::Message(format!("type not implemented: {:#?}", e).into())),
+            MetaType::Unit(span) => todo!(), //e => Err(LLVMError::Message(format!("type not implemented: {:#?}", e).into())),
         }
     }
 }

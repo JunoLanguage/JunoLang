@@ -1,21 +1,25 @@
 use inkwell::types::{BasicTypeEnum, StructType};
 
 use super::*;
-use crate::metair::*;
+use crate::{ast::JunoSpan, metair::*};
 
 impl<'ctx> LLVMBackend<'ctx> {
-    fn struct_type(&mut self, s: &MetaStruct) -> Result<StructType<'ctx>, LLVMError> {
+    fn struct_type(
+        &mut self,
+        s: &MetaStruct,
+        span: &JunoSpan,
+    ) -> Result<StructType<'ctx>, LLVMError> {
         let mut fields = Vec::<BasicTypeEnum<'ctx>>::new();
 
         for field in &s.fields {
-            fields.push(self.lower_type(&field.ty)?);
+            fields.push(self.lower_type(&field.ty, &field.span)?);
         }
 
         Ok(self.context.struct_type(&fields, false))
     }
 
-    pub fn lower_struct(&mut self, s: &MetaStruct) -> Result<(), LLVMError> {
-        let ty = self.struct_type(s)?;
+    pub fn lower_struct(&mut self, s: &MetaStruct, span: &JunoSpan) -> Result<(), LLVMError> {
+        let ty = self.struct_type(s, span)?;
 
         self.add_struct(s.name.clone(), &ty)?;
 

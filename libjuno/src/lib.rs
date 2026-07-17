@@ -1,3 +1,18 @@
+#![deny(clippy::inefficient_to_string)]
+#![deny(clippy::large_stack_arrays)]
+#![deny(clippy::redundant_clone)]
+#![deny(clippy::needless_collect)]
+#![deny(clippy::map_err_ignore)]
+#![deny(clippy::unused_async)]
+#![deny(clippy::manual_ok_or)]
+#![deny(clippy::manual_assert)]
+#![deny(clippy::clone_on_copy)]
+#![deny(clippy::collection_is_never_read)]
+#![deny(clippy::manual_filter)]
+#![deny(unused_must_use)]
+#![warn(clippy::all)]
+//#![forbid(unsafe_code)]
+
 #[cfg(feature = "grammar")]
 pub mod grammar;
 #[cfg(feature = "grammar")]

@@ -3,6 +3,7 @@ use pest::Parser;
 use std::{
     path::{Component, Path},
     process::exit,
+    sync::Arc,
 };
 
 use crate::*;
@@ -24,7 +25,13 @@ pub fn compile_file(p: &Path, pkg_name: Option<String>) -> Module<'static> {
             panic!("{e}");
         }
     };
-    let expr_owned = parse_program(pairs.into_iter().next().unwrap(), namespace).unwrap();
+    let expr_owned = parse_program(
+        pairs.into_iter().next().unwrap(),
+        namespace,
+        input.clone().into(),
+        p.to_str().unwrap_or("<unknown>").into(),
+    )
+    .unwrap();
     let expr = Box::leak(Box::new(expr_owned));
     let metairgen = Box::leak(Box::new(MetaIRGen::new(expr)));
     let metair = Box::leak(Box::new(metairgen.lower_program(expr)));
@@ -32,10 +39,9 @@ pub fn compile_file(p: &Path, pkg_name: Option<String>) -> Module<'static> {
     let mut irgen = LLVMBackend::new(context, metair, "main");
 
     if let Err(e) = irgen.compile() {
-        eprintln!("{:#?}", e);
+        eprintln!("{}", e);
         exit(1);
     }
-    irgen.dump_ir();
     return irgen.module;
 }
 

@@ -15,14 +15,14 @@ pub(super) async fn file_global_completion(
     params: CompletionParams,
 ) -> Result<Vec<CompletionItem>, Error> {
     let mut items = vec![];
-    let program = match super::get_program(backend, params) {
+    let program = match super::get_program(backend, params).await {
         Ok(p) => p,
         Err(_e) => return Ok(vec![]),
     }; // TODO
 
     for i in program.items {
         match i {
-            Item::Function(f) => {
+            Item::Function(f, span) => {
                 create_completion_for_function(f, &mut items);
             }
             _ => {
