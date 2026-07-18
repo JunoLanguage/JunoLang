@@ -179,6 +179,7 @@ pub enum MetaArg {
 #[derive(Debug, Clone)]
 pub enum MetaConst {
     Int(i64, JunoSpan),
+    Fractional(f64, JunoSpan),
     Bool(bool, JunoSpan),
     Char(char, JunoSpan),
 }
@@ -204,12 +205,19 @@ pub enum MetaBinOp {
 
     And,
     Or,
+
+    BitAnd,
+    BitOr,
+    BitXOR,
+    BitSHL,
+    BitSHR,
 }
 
 #[derive(Debug, Clone)]
 pub enum MetaUnOp {
     Neg,
     Not,
+    BitNot,
     Ref,
     Deref,
 }
@@ -295,6 +303,7 @@ impl fmt::Display for MetaConst {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             MetaConst::Int(i, span) => write!(f, "{i} at {:#?}", span),
+            MetaConst::Fractional(i, span) => write!(f, "{i} at {:#?}", span),
             MetaConst::Bool(b, span) => write!(f, "{b} at {:#?}", span),
             MetaConst::Char(c, span) => write!(f, "{c} at {:#?}", span),
         }

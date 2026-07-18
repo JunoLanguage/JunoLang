@@ -179,7 +179,9 @@ pub struct ForStmt {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
-    Number(i64, JunoSpan),
+    Integer(i64, Option<Type>, JunoSpan),
+    Fractional(f64, Option<Type>, JunoSpan),
+
     Boolean(bool, JunoSpan),
     String(String, JunoSpan),
     Char(char, JunoSpan),
@@ -233,6 +235,12 @@ pub enum BinOp {
 
     And,
     Or,
+
+    BitAnd,
+    BitOr,
+    BitXOR,
+    BitSHL,
+    BitSHR,
 }
 
 #[derive(Debug, Clone)]
@@ -246,6 +254,7 @@ pub struct UnaryExpr {
 pub enum UnOp {
     Not,
     Neg,
+    BitNot,
     Ref,
     Deref,
 }

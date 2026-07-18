@@ -82,6 +82,16 @@ impl<'ctx> LLVMBackend<'ctx> {
                     )),
                 }
             }
+            MetaExprKind::Const(MetaConst::Fractional(value, _), span) => {
+                match self.lower_type(&expr.ty, &expr.span)? {
+                    BasicTypeEnum::FloatType(i) => Ok(i.const_float(*value as f64).into()),
+
+                    _ => Err(LLVMError::SpanMessage(
+                        "integer constant has non-integer type".to_string(),
+                        span.clone(),
+                    )),
+                }
+            }
 
             MetaExprKind::Const(MetaConst::Bool(value, _), span) => {
                 match self.lower_type(&expr.ty, &expr.span)? {
@@ -161,7 +171,15 @@ impl<'ctx> LLVMBackend<'ctx> {
                     .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?
                     .into())
             }
+            MetaUnOp::BitNot => {
+                let value = self.lower_expr(expr, &expr.span)?.into_int_value();
 
+                Ok(self
+                    .builder
+                    .build_not(value, "bitnottmp")
+                    .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?
+                    .into())
+            }
             MetaUnOp::Ref => match &expr.kind {
                 MetaExprKind::Var(id, span) => Ok(self.get_variable(id.clone())?.ptr.into()),
 
@@ -328,6 +346,12 @@ impl<'ctx> LLVMBackend<'ctx> {
             | MetaBinOp::Mod
             | MetaBinOp::And
             | MetaBinOp::Or => self.lower_int_binary(op, lhs, rhs, span),
+
+            MetaBinOp::BitAnd
+            | MetaBinOp::BitOr
+            | MetaBinOp::BitSHL
+            | MetaBinOp::BitSHR
+            | MetaBinOp::BitXOR => self.lower_int_binary(op, lhs, rhs, span),
         }
     }
 
@@ -347,6 +371,11 @@ impl<'ctx> LLVMBackend<'ctx> {
             MetaBinOp::Mul => self.builder.build_int_mul(lhs, rhs, "multmp"),
             MetaBinOp::Div => self.builder.build_int_signed_div(lhs, rhs, "divtmp"),
             MetaBinOp::Mod => self.builder.build_int_signed_rem(lhs, rhs, "modtmp"),
+            MetaBinOp::BitAnd => self.builder.build_and(lhs, rhs, "bitandtmp"),
+            MetaBinOp::BitOr => self.builder.build_or(lhs, rhs, "bitandtmp"),
+            MetaBinOp::BitXOR => self.builder.build_xor(lhs, rhs, "bitandtmp"),
+            MetaBinOp::BitSHL => self.builder.build_left_shift(lhs, rhs, "bitandtmp"),
+            MetaBinOp::BitSHR => self.builder.build_right_shift(lhs, rhs, true, "bitandtmp"),
 
             MetaBinOp::Eq => {
                 self.builder

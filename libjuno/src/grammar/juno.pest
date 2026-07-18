@@ -109,10 +109,14 @@ loop_stmt = {
 expr = { logical }
 
 logical = {
-    comparison ~ ( logical_ops  ~ comparison )*
+    bitwise ~ ( logical_ops  ~ bitwise )*
 }
 logical_ops = ${("&&" | "||")}
 
+bitwise = {
+    comparison ~ ( bitwise_ops  ~ comparison )*
+}
+bitwise_ops = ${("&" | "|" | "^" | "<<" | ">>")}
 
 comparison = {
     arithmetic ~ ( comparison_ops ~ arithmetic )*
@@ -136,10 +140,11 @@ term_ops = ${("*" | "/" | "%" | "//")}
 unary = {
       unary_ops* ~ primary
 }
-unary_ops = ${("!" | "-" | "&" | "*")}
+unary_ops = ${("!" | "-" | "~" | "&" | "*")}
 
 primary = {
-      number
+    fractional
+    | integer
     | boolean
     | string
     | char
@@ -195,6 +200,12 @@ generics = {
     "<" ~ type_ ~ ("," ~ type_)* ~ ">"
 }
 
+literal_type = @{ "_"? ~ (
+      (("i" | "u" | "f") ~ ("8" | "16" | "32" | "64")) // Ints
+    | ("str" | "path" | "hex" | "bin" | "regex" | "utf8" | "ascii" | "addr") // Strings
+)}
+
+
 /* =========================
    IDENTIFIERS
 ========================= */
@@ -211,15 +222,15 @@ var_ident = {
 
 file_path = @{ ("." | ".." | "/") ~ (ASCII_ALPHANUMERIC | "." | "/" | "_" | "-")+ }
 
-number = @{ integer ~ fractional? }
 
-integer = @{ ASCII_DIGIT+ }
-
-fractional = @{ "." ~ ASCII_DIGIT+ }
+integer = !{ integer_ ~ literal_type? }
+integer_ = @{ ASCII_DIGIT+ }
+fractional = !{ fractional_? ~ literal_type }
+fractional_ = @{ integer_? ~ "." ~ ASCII_DIGIT+ }
 
 boolean = { "true" | "false" }
 
-string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" ~ literal_type?}
 
 char = @{
     "'" ~ (

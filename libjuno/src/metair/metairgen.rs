@@ -407,12 +407,22 @@ impl<'a> MetaIRGen<'a> {
 
     fn lower_expr(&mut self, e: &Expr) -> MetaExpr {
         match e {
-            Expr::Number(n, span) => MetaExpr {
+            Expr::Integer(n, type_, span) => MetaExpr {
                 span: span.clone(),
                 kind: MetaExprKind::Const(MetaConst::Int(*n, span.clone()), span.clone()),
-                ty: MetaType::Named(self.intern_symbol("i32"), span.clone()),
+                ty: match type_ {
+                    None => MetaType::Named(self.intern_symbol("i32"), span.clone()),
+                    Some(t) => self.lower_type(t),
+                },
             },
-
+            Expr::Fractional(n, type_, span) => MetaExpr {
+                span: span.clone(),
+                kind: MetaExprKind::Const(MetaConst::Fractional(*n, span.clone()), span.clone()),
+                ty: match type_ {
+                    None => MetaType::Named(self.intern_symbol("f32"), span.clone()),
+                    Some(t) => self.lower_type(t),
+                },
+            },
             Expr::Boolean(b, span) => MetaExpr {
                 span: span.clone(),
                 kind: MetaExprKind::Const(MetaConst::Bool(*b, span.clone()), span.clone()),
@@ -658,6 +668,11 @@ impl<'a> MetaIRGen<'a> {
 
             BinOp::And => MetaBinOp::And,
             BinOp::Or => MetaBinOp::Or,
+            BinOp::BitAnd => MetaBinOp::BitAnd,
+            BinOp::BitOr => MetaBinOp::BitOr,
+            BinOp::BitXOR => MetaBinOp::BitXOR,
+            BinOp::BitSHL => MetaBinOp::BitSHL,
+            BinOp::BitSHR => MetaBinOp::BitSHR,
 
             _ => MetaBinOp::Add,
         }
@@ -669,6 +684,7 @@ impl<'a> MetaIRGen<'a> {
             UnOp::Not => MetaUnOp::Not,
             UnOp::Ref => MetaUnOp::Ref,
             UnOp::Deref => MetaUnOp::Deref,
+            UnOp::BitNot => MetaUnOp::BitNot,
         }
     }
 
