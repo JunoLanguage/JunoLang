@@ -199,7 +199,7 @@ generics = {
    IDENTIFIERS
 ========================= */
 
-ident = @{ !KEYWORD ~ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+ident = @{ !(WHITE_SPACE ~ KEYWORD ~ WHITE_SPACE) ~ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 
 var_ident = {
     ident ~ (("." ~ ident) | ("::" ~ ident))*
@@ -279,10 +279,37 @@ KEYWORD = {
     | "else"
     | "while"
     | "for"
+    | "in"
     | "return"
     | "break"
     | "continue"
     | "import"
     | "decl"
+    // Reserved
+    | "as"
+    | "pub"
+    | "priv"
+    | "match"
+    | "enum"
+    | "type"
+    | "trait"
+    | "async"
+    | "await"
+    | "asm"
+    | "impl"
+    | "where"
+    | "const"
+    | "static"
+    | "dyn"
+    | "extern"
+    | "true"
+    | "false"
+    | "move"
+    | "self"
+    | "Self"
+    | "super"
+    | "union"
+    | "unsave"
+    | "save"
 }
 
