@@ -25,12 +25,9 @@ jobs:
         with:
           script: |
             const fs = require("fs");
-            const yaml = require("js-yaml");
-
-            const config = yaml.load(
-              fs.readFileSync(".github/labels.yml", "utf8")
+            const config = JSON.parse(
+              fs.readFileSync(".github/labels.json", "utf8")
             );
-
             const { owner, repo } = context.repo;
 
             // Fetch all repository labels
@@ -83,10 +80,8 @@ jobs:
         with:
           script: |
             const fs = require("fs");
-            const yaml = require("js-yaml");
-
-            const config = yaml.load(
-              fs.readFileSync(".github/labels.yml", "utf8")
+            const config = JSON.parse(
+              fs.readFileSync(".github/labels.json", "utf8")
             );
 
             const { owner, repo } = context.repo;
