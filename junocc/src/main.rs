@@ -27,7 +27,7 @@ struct Cli {
     bc: bool,
 
     #[arg(long = "emit-ir")]
-    emit_llvm_ir: bool
+    emit_llvm_ir: bool,
 }
 
 struct JunoObject<'a> {
@@ -61,15 +61,16 @@ fn main() {
     }
     if args.emit_llvm_ir {
         for o in &objects {
-            o.module.print_to_file(format!("{}.ll", o.filename)).unwrap();
+            o.module
+                .print_to_file(format!("{}.ll", o.filename))
+                .unwrap();
         }
     }
     if args.bc {
         for o in &objects {
             dbg!(&format!("./{}.bc", o.filename).to_string());
-            o.module.write_bitcode_to_path(Path::new(
-                &format!("./{}.bc", o.filename).to_string(),
-            ));
+            o.module
+                .write_bitcode_to_path(Path::new(&format!("./{}.bc", o.filename).to_string()));
         }
     }
     match out_ext {
