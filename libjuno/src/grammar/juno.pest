@@ -225,7 +225,7 @@ file_path = @{ ("." | ".." | "/") ~ (ASCII_ALPHANUMERIC | "." | "/" | "_" | "-")
 
 integer = !{ integer_ ~ literal_type? }
 integer_ = @{ ASCII_DIGIT+ }
-fractional = !{ fractional_? ~ literal_type }
+fractional = !{ fractional_ ~ literal_type? }
 fractional_ = @{ integer_? ~ "." ~ ASCII_DIGIT+ }
 
 boolean = { "true" | "false" }

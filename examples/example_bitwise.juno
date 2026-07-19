@@ -13,5 +13,6 @@ fn main(){
     let not : u8 = ~5u8; // ~5 = ...0000 0101 = ...1111 1010 = 250
     printf("~5 = %d\n", not);
 
-    
+    let test: f32 = 5.1f32;
+    printf("test: %d", test);
 }

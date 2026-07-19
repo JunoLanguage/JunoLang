@@ -413,7 +413,9 @@ impl<'a> JunoASTParser {
     }
     fn parse_fractional(&self, pair: JunoPair) -> anyhow::Result<Expr> {
         let mut inner = pair.clone().into_inner();
-        let first = inner.next().unwrap().as_str(); // TODO: No unwrap
+
+        let first = inner.next().unwrap(); // TODO: No unwrap
+        let first_str = first.as_str();
         let ty = match inner.next() {
             None => None,
             Some(x) => Some(Type::Named(
@@ -423,11 +425,11 @@ impl<'a> JunoASTParser {
         };
 
         Ok(Expr::Fractional(
-            match first.parse() {
+            match first_str.parse() {
                 Err(e) => {
                     return Err(anyhow::anyhow!(format!(
                         "{:?}",
-                        self.make_span(pair.as_span())
+                        self.make_span(first.as_span())
                             .err_to_report(&format!("{}: {}", e, first),)
                     )));
                 }
@@ -463,7 +465,7 @@ impl<'a> JunoASTParser {
         }
     }
     fn parse_let(&self, pair: JunoPair) -> anyhow::Result<Stmt> {
-        let span = pair.as_span();
+        let span = self.make_span(pair.as_span());
         let mut inner = pair.into_inner();
         let possible_mutable_pair = inner.next().unwrap();
         let mutable = possible_mutable_pair.as_str() == "mut";
@@ -485,7 +487,7 @@ impl<'a> JunoASTParser {
         };
 
         Ok(Stmt::Let(LetStmt {
-            span: self.make_span(span),
+            span,
             mutable,
             name,
             ty,
@@ -518,7 +520,7 @@ impl<'a> JunoASTParser {
         let span: JunoSpan = self.make_span(pair.as_span());
         let mut inner = pair.into_inner();
 
-        let mut raw_target: String = self.clean_ident(inner.next().unwrap().as_str());
+        let raw_target: String = self.clean_ident(inner.next().unwrap().as_str());
 
         let mut target = match self.functions.contains(&raw_target) {
             true => self.with_namespace(&raw_target),
@@ -535,9 +537,10 @@ impl<'a> JunoASTParser {
                 let span = inner.as_span().into();
                 match inner.as_rule() {
                     Rule::positional_arg => {
+                        let i = inner.into_inner().next().unwrap();
                         args.push(Arg::Positional(
-                            self.parse_expr(inner.into_inner().next().unwrap())?,
-                            span,
+                            self.parse_expr(i.clone())?,
+                            self.make_span(i.as_span()),
                         ));
                     }
 
@@ -694,7 +697,7 @@ impl<'a> JunoASTParser {
     }
 
     fn parse_struct_init(&self, pair: JunoPair) -> anyhow::Result<Expr> {
-        let span = pair.as_span();
+        let span = self.make_span(pair.as_span());
         let mut inner = pair.into_inner();
 
         let name = self.clean_ident(inner.next().unwrap().as_str());
@@ -702,22 +705,18 @@ impl<'a> JunoASTParser {
         let mut fields = vec![];
         let field_pairs = inner.next().unwrap();
         for f in field_pairs.into_inner() {
-            let mut i = f.into_inner();
+            let mut i = f.clone().into_inner();
             let name = self.clean_ident(i.next().unwrap().as_str());
             let value = self.parse_expr(i.next().unwrap())?;
 
             fields.push(StructInitField {
-                span: self.make_span(span),
+                span: self.make_span(f.as_span()),
                 name,
                 value,
             });
         }
 
-        Ok(Expr::StructInit(StructInit {
-            span: self.make_span(span),
-            name,
-            fields,
-        }))
+        Ok(Expr::StructInit(StructInit { span, name, fields }))
     }
 
     fn parse_base_type(&self, pair: Pair<Rule>) -> anyhow::Result<Type> {
@@ -734,14 +733,11 @@ impl<'a> JunoASTParser {
                 Ok(Type::Array {
                     elem: Box::new(elem),
                     size,
-                    span: span,
+                    span,
                 })
             }
 
-            Rule::var_ident => Ok(Type::Named(
-                self.clean_ident(first.as_str()),
-                first.as_span().into(),
-            )),
+            Rule::var_ident => Ok(Type::Named(self.clean_ident(first.as_str()), span)),
 
             _ => unreachable!(),
         }
@@ -781,12 +777,12 @@ impl<'a> JunoASTParser {
         let mut fields = vec![];
         let fields_pairs = inner.next().unwrap();
         for f in fields_pairs.into_inner() {
-            let mut i = f.into_inner();
+            let mut i = f.clone().into_inner();
             let name = self.clean_ident(i.next().unwrap().as_str());
             let ty = self.parse_type(i.next().unwrap())?;
 
             fields.push(StructField {
-                span: self.make_span(span),
+                span: self.make_span(f.as_span()),
                 name,
                 ty,
             });

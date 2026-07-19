@@ -8,6 +8,10 @@ fn main() -> i32 {
         name: "Max",
         age: 20,
     };
-
+    printf("Name: %s\n", p.name);
+    printf("Age: %d\n", p.age);
+    if (p.age >= 18) {
+        printf("You are old enough, %s\n", p.name);
+    }
     return 0;
 }

@@ -23,6 +23,7 @@ pub struct MetaIRGen<'a> {
     pub symbol_list: Vec<String>,
     pub string_list: Vec<String>,
     pub locals: Vec<HashMap<SymbolId, MetaType>>,
+    pub structs: HashMap<String, MetaStruct>,
     next_symbol: u32,
     next_string: u32,
     next_func: u32,
@@ -46,6 +47,7 @@ impl<'a> MetaIRGen<'a> {
             symbols: HashMap::new(),
             struct_fields: HashMap::new(),
             strings: HashMap::new(),
+            structs: HashMap::new(),
             symbol_list: vec![],
             string_list: vec![],
             next_symbol: 0,
@@ -109,7 +111,6 @@ impl<'a> MetaIRGen<'a> {
         self.program = p;
         let span = p.span.clone().to_owned();
         let mut functions = HashMap::new();
-        let mut structs = HashMap::new();
         let mut declarations = HashMap::new();
         for item in &p.items {
             match item {
@@ -118,7 +119,8 @@ impl<'a> MetaIRGen<'a> {
                 }
 
                 Item::Struct(s, span) => {
-                    structs.insert(s.name.clone(), self.lower_struct(s));
+                    let s = self.lower_struct(s).clone();
+                    self.structs.insert(s.name.clone(), s);
                 }
 
                 Item::Import(_, _) => {}
@@ -140,7 +142,8 @@ impl<'a> MetaIRGen<'a> {
         MetaProgram {
             span,
             functions,
-            structs,
+            symbols: self.symbols.clone(),
+            structs: self.structs.clone(),
             declarations,
             string_table: self.string_list.clone(),
             symbol_table: self.symbol_list.clone(),
@@ -191,13 +194,13 @@ impl<'a> MetaIRGen<'a> {
         let body = self.lower_block(&f.body);
 
         self.locals.pop();
-
         let f = MetaFunction {
             span: f.span.clone().to_owned(),
             name,
+            locals: body.1,
             params,
             ret,
-            body,
+            body: body.0,
         };
         f
     }
@@ -244,14 +247,14 @@ impl<'a> MetaIRGen<'a> {
     // Blocks / Stmts
     // =======================
 
-    fn lower_block(&mut self, b: &Block) -> Vec<MetaStmt> {
+    fn lower_block(&mut self, b: &Block) -> (Vec<MetaStmt>, HashMap<String, MetaType>) {
         self.locals.push(HashMap::new());
 
         let body = b.stmts.iter().map(|s| self.lower_stmt(s)).collect();
 
-        self.locals.pop();
+        let locals = self.locals.pop().unwrap_or(HashMap::new());
 
-        body
+        (body, locals)
     }
 
     fn lower_stmt(&mut self, s: &Stmt) -> MetaStmt {
@@ -277,13 +280,13 @@ impl<'a> MetaIRGen<'a> {
             Stmt::If(i) => MetaStmt::If {
                 span: i.span.clone(),
                 cond: self.lower_expr(&i.condition),
-                then_body: self.lower_block(&i.then_block),
+                then_body: self.lower_block(&i.then_block).0,
                 else_ifs: i
                     .else_ifs
                     .iter()
-                    .map(|(c, b)| (self.lower_expr(c), self.lower_block(b)))
+                    .map(|(c, b)| (self.lower_expr(c), self.lower_block(b).0))
                     .collect(),
-                else_body: i.else_block.as_ref().map(|b| self.lower_block(b)),
+                else_body: i.else_block.as_ref().map(|b| self.lower_block(b).0),
             },
 
             Stmt::While(w) => {
@@ -306,14 +309,14 @@ impl<'a> MetaIRGen<'a> {
                         then_body: vec![MetaStmt::Break(w.span.clone())],
 
                         else_ifs: vec![],
-                        else_body: Some(self.lower_block(&w.body)),
+                        else_body: Some(self.lower_block(&w.body).0),
                     }],
                 }
             }
 
             Stmt::Loop(b) => MetaStmt::Loop {
                 span: b.span.clone(),
-                body: self.lower_block(b),
+                body: self.lower_block(b).0,
             },
 
             Stmt::For(f) => MetaStmt::Break(f.span.clone()), // TODO
@@ -341,7 +344,7 @@ impl<'a> MetaIRGen<'a> {
             value,
         }
     }
-    fn coerce_expr(&mut self, mut expr: MetaExpr, expected: &MetaType) -> MetaExpr {
+    fn coerce_expr(&self, mut expr: MetaExpr, expected: &MetaType) -> MetaExpr {
         match (&mut expr.kind, &expr.ty, expected) {
             (_, actual, expected) if actual == expected => expr,
 
@@ -393,6 +396,7 @@ impl<'a> MetaIRGen<'a> {
                 .iter()
                 .map(|f| MetaField {
                     span: f.span.clone(),
+                    name: f.name.clone(),
                     index: self.intern_struct_field(s.name.clone(), &f.name),
                     ty: self.lower_type(&f.ty),
                 })
@@ -619,11 +623,10 @@ impl<'a> MetaIRGen<'a> {
         }
     }
     fn coerce_binary(
-        &mut self,
+        &self,
         mut lhs: MetaExpr,
         mut rhs: MetaExpr,
     ) -> Result<(MetaExpr, MetaExpr), miette::Error> {
-        // Bereits gleicher Typ
         if lhs.ty == rhs.ty {
             return Ok((lhs, rhs));
         }
@@ -634,7 +637,6 @@ impl<'a> MetaIRGen<'a> {
                 return Ok((lhs, rhs));
             }
 
-            // linke Seite ist Integer-Literal
             (MetaExprKind::Const(MetaConst::Int(_, _), _), ..) => {
                 lhs = self.coerce_expr(lhs, &rhs.ty);
                 return Ok((lhs, rhs));

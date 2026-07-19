@@ -1,5 +1,5 @@
 use crate::{ast::JunoSpan, metair::*};
-use inkwell::types::BasicType;
+use inkwell::{AddressSpace, types::BasicType};
 
 use super::*;
 
@@ -7,29 +7,29 @@ use inkwell::types::BasicTypeEnum;
 
 impl<'ctx> LLVMBackend<'ctx> {
     pub fn lower_type(
-        &mut self,
+        &self,
         ty: &MetaType,
         span: &JunoSpan,
     ) -> Result<BasicTypeEnum<'ctx>, LLVMError> {
         match ty {
             MetaType::Pointer(inner, span) => {
                 Ok(self
-                    .lower_type(inner, span)?
-                    .ptr_type(inkwell::AddressSpace::default())
-                    .into()) // TODO ptr_type is deprecated, searching for alternative
+                    .context
+                    .ptr_type(AddressSpace::default())
+                    .as_basic_type_enum()) // TODO ptr_type is deprecated, searching for alternative
             }
 
             MetaType::Reference(inner, span) => {
                 Ok(self
-                    .lower_type(inner, span)?
-                    .ptr_type(inkwell::AddressSpace::default())
-                    .into()) // TODO
+                    .context
+                    .ptr_type(AddressSpace::default())
+                    .as_basic_type_enum()) // TODO
             }
             MetaType::Array { elem, size, span } => {
                 Ok(self.lower_type(elem, span)?.array_type(*size).into())
             }
 
-            MetaType::Named(id, span) => match id.as_str() {
+            MetaType::Named(id, named_span) => match id.as_str() {
                 "bool" => Ok(self.context.bool_type().into()),
 
                 "char" => Ok(self.context.i8_type().into()),
@@ -50,7 +50,11 @@ impl<'ctx> LLVMBackend<'ctx> {
                 _ => {
                     if self.program.structs.get(id).is_some() {
                         if !self.structs.contains_key(id) {
-                            self.lower_struct(&self.program.structs[&id.clone()], span)?;
+                            //return self.struct_type(&self.program.structs[&id.clone()], span).map(|x| x.as_basic_type_enum())
+                            return Err(LLVMError::SpanMessage(
+                                "Struct found but not in irgen, maybe a compiler bug?".to_string(),
+                                span.clone(),
+                            ));
                         }
                         return match self.get_struct(id.clone()) {
                             Err(e) => Err(e),
@@ -61,6 +65,23 @@ impl<'ctx> LLVMBackend<'ctx> {
                 }
             },
             MetaType::Unit(span) => todo!(), //e => Err(LLVMError::Message(format!("type not implemented: {:#?}", e).into())),
+        }
+    }
+
+    pub fn get_named_from_type(&self, ty: &MetaType) -> Result<String, LLVMError> {
+        match ty {
+            MetaType::Named(name, _juno_span) => Ok(name.clone()),
+            MetaType::Pointer(meta_type, _juno_span) => self.get_named_from_type(meta_type),
+            MetaType::Reference(meta_type, _juno_span) => self.get_named_from_type(meta_type),
+            MetaType::Array {
+                span: _,
+                elem,
+                size: _,
+            } => self.get_named_from_type(elem),
+            MetaType::Unit(juno_span) => Err(LLVMError::SpanMessage(
+                "Unit type found".to_string(),
+                juno_span.clone(),
+            )),
         }
     }
 }

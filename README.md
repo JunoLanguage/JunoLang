@@ -74,13 +74,13 @@ junocc examples/helloworld.juno examples/library.juno -o program
 * [x] Semantic analysis
 * [x] LLVM code generation
 * [x] Basic optimizations
-* [ ] Structs
+* [x] Structs
 * [ ] Enums
 * [ ] Generics
 * [ ] Trait system
 * [ ] Standard library
 * [ ] Package manager
-* [ ] Language server (LSP)
+* [x] Language server (LSP)
 
 ## Philosophy
 

@@ -1,4 +1,4 @@
-use std::f64::consts::E;
+use std::{collections::HashMap, f64::consts::E};
 
 use inkwell::{
     types::{AsTypeRef, BasicTypeEnum},
@@ -14,7 +14,7 @@ use super::*;
 
 impl<'ctx> LLVMBackend<'ctx> {
     pub fn lower_expr(
-        &mut self,
+        &self,
         expr: &MetaExpr,
         span: &JunoSpan,
     ) -> Result<BasicValueEnum<'ctx>, LLVMError> {
@@ -87,7 +87,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                     BasicTypeEnum::FloatType(i) => Ok(i.const_float(*value as f64).into()),
 
                     _ => Err(LLVMError::SpanMessage(
-                        "integer constant has non-integer type".to_string(),
+                        "fractional constant has non-fractional type".to_string(),
                         span.clone(),
                     )),
                 }
@@ -116,11 +116,13 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
 
             MetaExprKind::Var(id, span) => {
-                let var = self.get_variable(id.clone())?;
-                Ok(self
-                    .builder
-                    .build_load(var.ty, var.ptr, id)
-                    .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?)
+                let meta = self.current_meta_function();
+                let locals = &meta.locals;
+                self.get_variable_expr(id.clone(), locals, span)
+                /*Ok(self
+                .builder
+                .build_load(var.ty, var.ptr, id)
+                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?)*/
             }
             MetaExprKind::StructInit { span, name, fields } => {
                 let s = self.get_struct(name.clone())?;
@@ -144,9 +146,51 @@ impl<'ctx> LLVMBackend<'ctx> {
             )),
         }
     }
+    pub fn get_variable_expr(
+        &self,
+        id: SymbolId,
+        locals: &HashMap<SymbolId, MetaType>,
+        span: &JunoSpan,
+    ) -> Result<BasicValueEnum<'ctx>, LLVMError> {
+        let parts: Vec<&str> = id.split('.').collect();
 
+        let var = self.get_variable(parts[0].to_string())?;
+        let struct_ty = locals.get(parts[0]);
+        let mut ptr = var.ptr;
+        let mut ty = var.ty.clone();
+        for field in &parts[1..] {
+            let struct_name = match struct_ty {
+                Some(t) => self.get_named_from_type(t),
+                None => {
+                    return Err(LLVMError::SpanMessage(
+                        format!("{} is not a struct", field),
+                        span.clone(),
+                    ));
+                }
+            }?;
+
+            let struct_ = self.program.structs.get(&struct_name).unwrap();
+
+            let field_index = self
+                .program
+                .struct_fields
+                .get(&struct_name)
+                .unwrap()
+                .iter()
+                .position(|x| x == field)
+                .unwrap();
+
+            ptr = self
+                .builder
+                .build_struct_gep(ty, ptr, field_index as u32, "field")?;
+
+            ty = self.lower_type(&struct_.fields[field_index].ty, span)?;
+        }
+
+        Ok(self.builder.build_load(ty, ptr, "load")?)
+    }
     fn lower_unary(
-        &mut self,
+        &self,
         op: &MetaUnOp,
         expr: &MetaExpr,
         span: &JunoSpan,
@@ -213,7 +257,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
 
     fn lower_string(
-        &mut self,
+        &self,
         id: StringId,
         span: &JunoSpan,
     ) -> Result<BasicValueEnum<'ctx>, LLVMError> {
@@ -231,7 +275,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
 
     pub fn lower_call(
-        &mut self,
+        &self,
         target: SymbolId,
         args: &[MetaArg],
         span: &JunoSpan,
@@ -255,7 +299,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         }
     }
     fn lower_normal_call(
-        &mut self,
+        &self,
         function: FunctionValue<'ctx>,
         args: &[MetaArg],
         span: &JunoSpan,
@@ -286,7 +330,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         Ok(llvm_args)
     }
     fn lower_variadic_call(
-        &mut self,
+        &self,
         function: FunctionValue<'ctx>,
         args: &[MetaArg],
     ) -> Result<Vec<BasicMetadataValueEnum<'ctx>>, LLVMError> {
@@ -323,7 +367,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         Ok(llvm_args)
     }
     fn lower_binary(
-        &mut self,
+        &self,
         op: &MetaBinOp,
         lhs: &MetaExpr,
         rhs: &MetaExpr,
@@ -356,7 +400,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
 
     fn lower_int_binary(
-        &mut self,
+        &self,
         op: &MetaBinOp,
         lhs: BasicValueEnum<'ctx>,
         rhs: BasicValueEnum<'ctx>,
@@ -417,7 +461,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
 
     fn lower_eq(
-        &mut self,
+        &self,
         op: &MetaBinOp,
         lhs: BasicValueEnum<'ctx>,
         rhs: BasicValueEnum<'ctx>,
@@ -452,7 +496,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
 
     fn lower_cmp(
-        &mut self,
+        &self,
         op: &MetaBinOp,
         lhs: BasicValueEnum<'ctx>,
         rhs: BasicValueEnum<'ctx>,

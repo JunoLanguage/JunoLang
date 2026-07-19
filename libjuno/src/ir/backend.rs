@@ -39,7 +39,7 @@ pub struct LLVMBackend<'ctx> {
     pub scopes: Vec<Scope<'ctx>>,
 
     pub current_function: Option<FunctionValue<'ctx>>,
-
+    pub current_meta_function: Option<&'ctx MetaFunction>,
     pub current_struct: Option<StructType<'ctx>>,
 
     pub loop_stack: Vec<LoopFrame<'ctx>>,
@@ -66,6 +66,7 @@ impl<'ctx> LLVMBackend<'ctx> {
             loop_stack: Vec::new(),
 
             current_function: None,
+            current_meta_function: None,
             current_struct: None,
         };
         s.declare_builtins();
@@ -97,6 +98,9 @@ impl<'ctx> LLVMBackend<'ctx> {
     pub fn current_function(&self) -> FunctionValue<'ctx> {
         self.current_function.unwrap()
     }
+    pub fn current_meta_function(&self) -> &MetaFunction {
+        self.current_meta_function.unwrap()
+    }
     pub fn insert_variable(
         &mut self,
         id: SymbolId,
@@ -110,12 +114,16 @@ impl<'ctx> LLVMBackend<'ctx> {
         &self,
         id: SymbolId,
     ) -> Result<&crate::ir::scope::Variable<'ctx>, LLVMError> {
+        let mut parts = id.split('.');
+
+        let var_name = parts.next().unwrap();
+
         for scope in self.scopes.iter().rev() {
-            if let Some(var) = scope.get(id.clone()) {
+            if let Some(var) = scope.get(var_name.to_string()) {
                 return Ok(var);
             }
         }
 
-        Err(LLVMError::UnknownVariable(id))
+        Err(LLVMError::UnknownVariable(var_name.to_string()))
     }
 }

@@ -22,10 +22,10 @@ pub struct MetaStruct {
 #[derive(Debug, Clone)]
 pub struct MetaField {
     pub span: JunoSpan,
+    pub name: SymbolId,
     pub index: u32,
     pub ty: MetaType,
 }
-
 #[derive(Debug, Clone)]
 pub struct MetaProgram {
     pub span: JunoSpan,
@@ -35,6 +35,7 @@ pub struct MetaProgram {
     pub struct_fields: HashMap<SymbolId, Vec<String>>,
     pub string_table: Vec<String>,
     pub symbol_table: Vec<String>,
+    pub symbols: HashMap<SymbolId, String>,
 }
 
 // =======================
@@ -45,6 +46,7 @@ pub struct MetaProgram {
 pub struct MetaFunction {
     pub span: JunoSpan,
     pub name: SymbolId,
+    pub locals: HashMap<SymbolId, MetaType>,
     pub params: Vec<MetaParam>,
     pub ret: Option<MetaType>,
     pub body: Vec<MetaStmt>,

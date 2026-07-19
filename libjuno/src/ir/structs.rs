@@ -4,8 +4,8 @@ use super::*;
 use crate::{ast::JunoSpan, metair::*};
 
 impl<'ctx> LLVMBackend<'ctx> {
-    fn struct_type(
-        &mut self,
+    pub fn struct_type(
+        &self,
         s: &MetaStruct,
         span: &JunoSpan,
     ) -> Result<StructType<'ctx>, LLVMError> {
@@ -32,7 +32,8 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
 
     pub fn get_struct(&self, target: SymbolId) -> Result<StructType<'ctx>, LLVMError> {
-        if target.len() != 1 {
+        let target_split: Vec<&str> = target.split(".").collect();
+        if target_split.len() != 1 {
             return Err(LLVMError::Message(
                 "qualified struct lookup is not implemented".into(),
             ));

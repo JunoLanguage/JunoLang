@@ -9,11 +9,15 @@ use inkwell::types::BasicMetadataTypeEnum;
 
 impl<'ctx> LLVMBackend<'ctx> {
     pub fn lower_program(&mut self) -> Result<(), LLVMError> {
+        for (struct_name, s) in &self.program.structs {
+            self.lower_struct(s, &s.span)?;
+        }
         for (declaration_name, declaration) in &self.program.declarations {
             self.lower_declaration(declaration, &declaration.span)?;
         }
 
         for (function_name, function) in &self.program.functions {
+            self.current_meta_function = Some(function);
             self.declare_function(function)?;
             self.lower_function(function, &function.span)?;
         }
