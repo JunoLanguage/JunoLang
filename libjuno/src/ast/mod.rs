@@ -8,61 +8,38 @@ use pest::Span;
 use std::fmt;
 use std::sync::Arc;
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone)]
 pub struct JunoSpan {
-    pub source_code: Arc<str>,
-    pub source_file_name: Arc<str>,
     pub start: usize,
     pub end: usize,
 }
 
 impl JunoSpan {
-    pub fn text(&self) -> &str {
-        &self.source_code[self.start..self.end]
-    }
     pub fn new(
         start: usize,
         end: usize,
-        source_code: Arc<str>,
-        source_file_name: Arc<str>,
     ) -> Self {
         Self {
             start,
             end,
-            source_code,
-            source_file_name,
         }
-    }
-    pub fn with_source(&self, source_code: &str, source_file_name: &str) -> Self {
-        return Self {
-            start: self.start,
-            end: self.end,
-            source_code: source_code.into(),
-            source_file_name: source_file_name.into(),
-        };
     }
 }
 use std::convert::TryFrom;
 
-impl<'a> TryFrom<&'a JunoSpan> for Span<'a> {
-    type Error = anyhow::Error;
-    fn try_from(span: &'a JunoSpan) -> anyhow::Result<Self> {
-        Span::new(&span.text(), span.start, span.end).ok_or(anyhow!("invalid span"))
-    }
-}
+
 impl<'a> From<pest::Span<'a>> for JunoSpan {
     fn from(span: pest::Span<'a>) -> Self {
         Self {
             start: span.start(),
             end: span.end(),
-            ..Default::default()
         }
     }
 }
 
 impl JunoSpan {
-    pub fn err_to_report(&self, label: &str) -> Report {
-        let source = NamedSource::new(&self.source_file_name, self.source_code.to_string());
+    pub fn err_to_report(&self, label: &str, source: String, source_file_name: &str) -> Report {
+        let source = NamedSource::new(source_file_name, source);
 
         let report = miette::miette!(
             labels = vec![LabeledSpan::at(self.start..self.end, label)],

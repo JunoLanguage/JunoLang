@@ -1,3 +1,5 @@
+use anyhow::Error;
+
 use crate::{ast::JunoSpan, *};
 use std::fmt;
 #[derive(Debug)]
@@ -10,7 +12,7 @@ pub enum LLVMError {
 
     Message(String),
 
-    SpanMessage(String, JunoSpan),
+    SpanMessage(String, JunoSpan, String, String),
 }
 
 impl fmt::Display for LLVMError {
@@ -35,10 +37,16 @@ impl fmt::Display for LLVMError {
             LLVMError::Message(msg) => {
                 write!(f, "{msg}")
             }
-            LLVMError::SpanMessage(msg, span) => {
-                write!(f, "{:?}", span.err_to_report(msg))
+            LLVMError::SpanMessage(msg, span, source, source_file_name) => {
+                write!(f, "{:?}", span.err_to_report(&msg, source.clone(), &source_file_name))
             }
         }
+    }
+}
+
+impl<'ctx> LLVMBackend<'ctx> {
+    pub fn make_span_error(&self, msg: String, span: JunoSpan) -> LLVMError {
+        LLVMError::SpanMessage(msg, span, self.source_code.clone(), self.source_file_name.clone())
     }
 }
 

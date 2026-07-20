@@ -23,9 +23,9 @@ impl<'ctx> LLVMBackend<'ctx> {
 
             MetaExprKind::Call { target, args, span } => {
                 self.lower_call(target.clone(), args, span)?.ok_or_else(|| {
-                    LLVMError::SpanMessage(
+                    self.make_span_error(
                         "void function used as expression".to_string(),
-                        span.clone(),
+                        *span,
                     )
                 })
             }
@@ -45,9 +45,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                     }
 
                     _ => {
-                        return Err(LLVMError::SpanMessage(
+                        return Err(self.make_span_error(
                             "array literal has non-array type".to_string(),
-                            span.clone(),
+                           *span,
                         ));
                     }
                 };
@@ -57,9 +57,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                 }
 
                 if items.len() != expected_size {
-                    return Err(LLVMError::SpanMessage(
+                    return Err(self.make_span_error(
                         "array literal size mismatch".to_string(),
-                        span.clone(),
+                       *span,
                     ));
                 }
 
@@ -76,9 +76,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                 match self.lower_type(&expr.ty, &expr.span)? {
                     BasicTypeEnum::IntType(i) => Ok(i.const_int(*value as u64, true).into()),
 
-                    _ => Err(LLVMError::SpanMessage(
+                    _ => Err(self.make_span_error(
                         "integer constant has non-integer type".to_string(),
-                        span.clone(),
+                       *span,
                     )),
                 }
             }
@@ -86,9 +86,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                 match self.lower_type(&expr.ty, &expr.span)? {
                     BasicTypeEnum::FloatType(i) => Ok(i.const_float(*value as f64).into()),
 
-                    _ => Err(LLVMError::SpanMessage(
+                    _ => Err(self.make_span_error(
                         "fractional constant has non-fractional type".to_string(),
-                        span.clone(),
+                       *span,
                     )),
                 }
             }
@@ -97,9 +97,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                 match self.lower_type(&expr.ty, &expr.span)? {
                     BasicTypeEnum::IntType(i) => Ok(i.const_int(*value as u64, false).into()),
 
-                    _ => Err(LLVMError::SpanMessage(
+                    _ => Err(self.make_span_error(
                         "bool constant has non-bool type".to_string(),
-                        span.clone(),
+                       *span,
                     )),
                 }
             }
@@ -108,9 +108,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                 match self.lower_type(&expr.ty, &expr.span)? {
                     BasicTypeEnum::IntType(i) => Ok(i.const_int(*value as u64, false).into()),
 
-                    _ => Err(LLVMError::SpanMessage(
+                    _ => Err(self.make_span_error(
                         "char constant has non-char type".to_string(),
-                        span.clone(),
+                       *span,
                     )),
                 }
             }
@@ -122,7 +122,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 /*Ok(self
                 .builder
                 .build_load(var.ty, var.ptr, id)
-                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?)*/
+                .map_err(|e| self.make_span_error(e.to_string(),*span))?)*/
             }
             MetaExprKind::StructInit { span, name, fields } => {
                 let s = self.get_struct(name.clone())?;
@@ -140,9 +140,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                 let value = self.builder.build_load(s, s_ptr, "tmp").unwrap();
                 Ok(value)
             }
-            MetaExprKind::Void(span) => Err(LLVMError::SpanMessage(
+            MetaExprKind::Void(span) => Err(self.make_span_error(
                 "void expression used as value".to_string(),
-                span.clone(),
+               *span,
             )),
         }
     }
@@ -162,9 +162,9 @@ impl<'ctx> LLVMBackend<'ctx> {
             let struct_name = match struct_ty {
                 Some(t) => self.get_named_from_type(t),
                 None => {
-                    return Err(LLVMError::SpanMessage(
+                    return Err(self.make_span_error(
                         format!("{} is not a struct", field),
-                        span.clone(),
+                       *span,
                     ));
                 }
             }?;
@@ -202,7 +202,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 Ok(self
                     .builder
                     .build_int_neg(value, "negtmp")
-                    .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?
+                    .map_err(|e| self.make_span_error(e.to_string(),*span))?
                     .into())
             }
 
@@ -212,7 +212,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 Ok(self
                     .builder
                     .build_not(value, "nottmp")
-                    .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?
+                    .map_err(|e| self.make_span_error(e.to_string(),*span))?
                     .into())
             }
             MetaUnOp::BitNot => {
@@ -221,15 +221,15 @@ impl<'ctx> LLVMBackend<'ctx> {
                 Ok(self
                     .builder
                     .build_not(value, "bitnottmp")
-                    .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?
+                    .map_err(|e| self.make_span_error(e.to_string(),*span))?
                     .into())
             }
             MetaUnOp::Ref => match &expr.kind {
                 MetaExprKind::Var(id, span) => Ok(self.get_variable(id.clone())?.ptr.into()),
 
-                _ => Err(LLVMError::SpanMessage(
+                _ => Err(self.make_span_error(
                     "reference requires a variable".to_string(),
-                    expr.span.clone(),
+                    expr.span,
                 )),
             },
 
@@ -239,9 +239,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                 let pointee = match &expr.ty {
                     MetaType::Pointer(inner, span) | MetaType::Reference(inner, span) => inner,
                     _ => {
-                        return Err(LLVMError::SpanMessage(
+                        return Err(self.make_span_error(
                             "cannot dereference non-pointer".to_string(),
-                            span.clone(),
+                           *span,
                         ));
                     }
                 };
@@ -251,7 +251,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 Ok(self
                     .builder
                     .build_load(llvm_ty, ptr, "deref")
-                    .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?)
+                    .map_err(|e| self.make_span_error(e.to_string(),*span))?)
             }
         }
     }
@@ -263,13 +263,13 @@ impl<'ctx> LLVMBackend<'ctx> {
     ) -> Result<BasicValueEnum<'ctx>, LLVMError> {
         let string =
             self.program.string_table.get(id as usize).ok_or_else(|| {
-                LLVMError::SpanMessage("unknown string id".to_string(), span.clone())
+                self.make_span_error("unknown string id".to_string(),*span)
             })?;
 
         let ptr = self
             .builder
             .build_global_string_ptr(string, &format!("str.{}", id))
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         Ok(ptr.as_pointer_value().into())
     }
@@ -291,7 +291,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         let call = self
             .builder
             .build_call(function, &llvm_args, "calltmp")
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         match call.try_as_basic_value() {
             inkwell::values::ValueKind::Basic(value) => Ok(Some(value)),
@@ -305,13 +305,13 @@ impl<'ctx> LLVMBackend<'ctx> {
         span: &JunoSpan,
     ) -> Result<Vec<BasicMetadataValueEnum<'ctx>>, LLVMError> {
         if args.len() != function.count_params() as usize {
-            return Err(LLVMError::SpanMessage(
+            return Err(self.make_span_error(
                 format!(
                     "expected {} arguments, got {}",
                     function.count_params(),
                     args.len()
                 ),
-                span.clone(),
+               *span,
             ));
         }
 
@@ -455,7 +455,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
             MetaBinOp::Or => self.builder.build_or(lhs, rhs, "ortmp"),
         })
-        .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+        .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         Ok(value.into())
     }
@@ -485,9 +485,9 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
 
             _ => {
-                return Err(LLVMError::SpanMessage(
+                return Err(self.make_span_error(
                     "cannot compare these types".to_string(),
-                    span.clone(),
+                   *span,
                 ));
             }
         };
@@ -506,9 +506,9 @@ impl<'ctx> LLVMBackend<'ctx> {
             (BasicValueEnum::IntValue(l), BasicValueEnum::IntValue(r)) => (l, r),
 
             _ => {
-                return Err(LLVMError::SpanMessage(
+                return Err(self.make_span_error(
                     "comparison requires integer operands".to_string(),
-                    span.clone(),
+                   *span,
                 ));
             }
         };
@@ -524,7 +524,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         Ok(self
             .builder
             .build_int_compare(pred, lhs, rhs, "cmptmp")
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?
             .into())
     }
 
@@ -541,9 +541,9 @@ impl<'ctx> LLVMBackend<'ctx> {
             (IntValue(l), IntValue(r)) => (l, r),
 
             _ => {
-                return Err(LLVMError::SpanMessage(
+                return Err(self.make_span_error(
                     "logical operators require bool operands".to_string(),
-                    span.clone(),
+                   *span,
                 ));
             }
         };
@@ -553,7 +553,7 @@ impl<'ctx> LLVMBackend<'ctx> {
             MetaBinOp::Or => self.builder.build_or(lhs, rhs, "ortmp"),
             _ => unreachable!(),
         }
-        .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+        .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         Ok(value.into())
     }

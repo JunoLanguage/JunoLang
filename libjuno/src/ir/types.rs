@@ -51,9 +51,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                     if self.program.structs.get(id).is_some() {
                         if !self.structs.contains_key(id) {
                             //return self.struct_type(&self.program.structs[&id.clone()], span).map(|x| x.as_basic_type_enum())
-                            return Err(LLVMError::SpanMessage(
+                            return Err(self.make_span_error(
                                 "Struct found but not in irgen, maybe a compiler bug?".to_string(),
-                                span.clone(),
+                               *span,
                             ));
                         }
                         return match self.get_struct(id.clone()) {
@@ -78,9 +78,9 @@ impl<'ctx> LLVMBackend<'ctx> {
                 elem,
                 size: _,
             } => self.get_named_from_type(elem),
-            MetaType::Unit(juno_span) => Err(LLVMError::SpanMessage(
+            MetaType::Unit(juno_span) => Err(self.make_span_error(
                 "Unit type found".to_string(),
-                juno_span.clone(),
+                *juno_span,
             )),
         }
     }

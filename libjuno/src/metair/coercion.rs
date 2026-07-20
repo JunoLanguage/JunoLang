@@ -6,11 +6,7 @@ impl<'a> MetaIRGen<'a> {
     // Type Coercion
     // =======================
 
-    pub(crate) fn coerce_expr(
-        &self,
-        mut expr: MetaExpr,
-        expected: &MetaType,
-    ) -> MetaExpr {
+    pub(crate) fn coerce_expr(&self, mut expr: MetaExpr, expected: &MetaType) -> MetaExpr {
         match (&mut expr.kind, &expr.ty, expected) {
             (_, actual, expected) if actual == expected => expr,
 
@@ -33,7 +29,7 @@ impl<'a> MetaIRGen<'a> {
                 },
             ) => {
                 if values.len() > *size as usize {
-                    panic!("{:?}", span.err_to_report("array too large"));
+                    panic!("{:?}", self.make_span_error("array too large", *span));
                 }
 
                 for value in values.iter_mut() {
@@ -47,11 +43,10 @@ impl<'a> MetaIRGen<'a> {
             _ => {
                 panic!(
                     "{:?}",
-                    expr.span.err_to_report(&format!(
-                        "type mismatch: expected {}, got {}",
-                        expected,
-                        expr.ty
-                    ))
+                    self.make_span_error(
+                        &format!("type mismatch: expected {}, got {}", expected, expr.ty),
+                        expr.span
+                    )
                 )
             }
         }
@@ -77,11 +72,7 @@ impl<'a> MetaIRGen<'a> {
                 Ok((lhs, rhs))
             }
 
-            _ => Err(lhs.span.err_to_report(&format!(
-                "type mismatch: {} vs {}",
-                lhs.ty,
-                rhs.ty,
-            ))),
+            _ => Err(self.make_span_error(&format!("type mismatch: {} vs {}", lhs.ty, rhs.ty,), lhs.span)),
         }
     }
 }

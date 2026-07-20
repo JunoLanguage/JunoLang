@@ -48,7 +48,10 @@ pub fn parse_program(
 
 impl<'a> JunoASTParser {
     pub fn make_span(&self, span: Span) -> JunoSpan {
-        JunoSpan::from(span).with_source(&self.source_code, &self.source_file_name)
+        JunoSpan::from(span)
+    }
+    pub fn make_span_error(&self, span: Span, label: &str) -> miette::Error {
+        self.make_span(span).err_to_report(label, self.source_code.to_string(), &self.source_file_name)
     }
     pub fn parse_program(&mut self, pair: Pair<Rule>) -> anyhow::Result<Program> {
         let span = pair.as_span();
@@ -77,7 +80,7 @@ impl<'a> JunoASTParser {
                 }
                 Rule::EOI => {}
                 other => {
-                    return Err(anyhow!(self.make_span(span).err_to_report(&format!(
+                    return Err(anyhow!(self.make_span_error(span, &format!(
                         "unexpected rule in program: {:?}",
                         other
                     ))));
@@ -380,9 +383,8 @@ impl<'a> JunoASTParser {
             Rule::struct_init => self.parse_struct_init(first),
 
             other => Err(anyhow!(
-                self.make_span(first.as_span())
-                    .err_to_report(&format!("unexpected primary: {:?}", other))
-            )),
+                self.make_span_error(first.as_span(), &format!("unexpected primary: {:?}", other)))
+            ),
         }
     }
     fn parse_integer(&self, pair: JunoPair) -> anyhow::Result<Expr> {
@@ -401,8 +403,7 @@ impl<'a> JunoASTParser {
                 Err(e) => {
                     return Err(anyhow::anyhow!(format!(
                         "{:?}",
-                        self.make_span(pair.as_span())
-                            .err_to_report(&format!("{}: {}", e, first),)
+                        self.make_span_error(pair.as_span(), &format!("{}: {}", e, first),)
                     )));
                 }
                 Ok(n) => n,
@@ -429,8 +430,7 @@ impl<'a> JunoASTParser {
                 Err(e) => {
                     return Err(anyhow::anyhow!(format!(
                         "{:?}",
-                        self.make_span(first.as_span())
-                            .err_to_report(&format!("{}: {}", e, first),)
+                        self.make_span_error(first.as_span(), &format!("{}: {}", e, first),)
                     )));
                 }
                 Ok(n) => n,
@@ -662,8 +662,7 @@ impl<'a> JunoASTParser {
             "-" => Ok(UnOp::Neg),
             "~" => Ok(UnOp::BitNot),
             other => Err(anyhow!(
-                self.make_span(pair.as_span())
-                    .err_to_report(&format!("unknown unary op: {}", other))
+                self.make_span_error(pair.as_span(), &format!("unknown unary op: {}", other))
             )),
         }
     }

@@ -12,7 +12,7 @@ impl<'a> MetaIRGen<'a> {
     pub fn lower_program(&mut self, program: &'a Program) -> MetaProgram {
         self.program = program;
 
-        let span = program.span.clone();
+        let span = program.span;
 
         let mut functions = HashMap::new();
         let mut declarations = HashMap::new();
@@ -81,7 +81,7 @@ impl<'a> MetaIRGen<'a> {
                 .insert(param.name.clone(), ty.clone());
 
             params.push(MetaParam {
-                span: param.span.clone(),
+                span: param.span,
                 name: param.name.clone(),
                 ty,
             });
@@ -95,7 +95,7 @@ impl<'a> MetaIRGen<'a> {
         self.declarations.insert(
             name.clone(),
             MetaDeclaration {
-                span: function.span.clone(),
+                span: function.span,
                 name: name.clone(),
                 params: params.clone(),
                 ret: ret.clone(),
@@ -107,7 +107,7 @@ impl<'a> MetaIRGen<'a> {
         self.locals.pop();
 
         MetaFunction {
-            span: function.span.clone(),
+            span: function.span,
             name,
             locals,
             params,
@@ -132,7 +132,7 @@ impl<'a> MetaIRGen<'a> {
                 .insert(param.name.clone(), ty.clone());
 
             params.push(MetaParam {
-                span: param.span.clone(),
+                span: param.span,
                 name: param.name.clone(),
                 ty,
             });
@@ -146,7 +146,7 @@ impl<'a> MetaIRGen<'a> {
             .map(|ty| self.lower_type(ty));
 
         let meta = MetaDeclaration {
-            span: declaration.span.clone(),
+            span: declaration.span,
             name: name.clone(),
             params,
             ret,
@@ -163,13 +163,13 @@ impl<'a> MetaIRGen<'a> {
 
     fn lower_struct(&mut self, strukt: &StructDef) -> MetaStruct {
         let meta = MetaStruct {
-            span: strukt.span.clone(),
+            span: strukt.span,
             name: self.intern_symbol(&strukt.name),
             fields: strukt
                 .fields
                 .iter()
                 .map(|field| MetaField {
-                    span: field.span.clone(),
+                    span: field.span,
                     name: field.name.clone(),
                     index: self.intern_struct_field(strukt.name.clone(), &field.name),
                     ty: self.lower_type(&field.ty),

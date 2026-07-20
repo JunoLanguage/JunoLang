@@ -66,7 +66,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         for (index, param) in function.params.iter().enumerate() {
             let llvm_param = llvm_function.get_nth_param(index as u32).ok_or_else(|| {
-                LLVMError::SpanMessage(format!("missing llvm parameter {}", index), span.clone())
+                self.make_span_error(format!("missing llvm parameter {}", index),*span)
             })?;
 
             llvm_param.set_name(&param.name.as_str());
@@ -75,11 +75,11 @@ impl<'ctx> LLVMBackend<'ctx> {
             let ptr = self
                 .builder
                 .build_alloca(llvm_type, &param.name.as_str())
-                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+                .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
             self.builder
                 .build_store(ptr, llvm_param)
-                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+                .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
             self.insert_variable(param.name.clone(), ptr, llvm_param.get_type());
         }
@@ -97,19 +97,19 @@ impl<'ctx> LLVMBackend<'ctx> {
         {
             match function.ret {
                 Some(_) => {
-                    return Err(LLVMError::SpanMessage(
+                    return Err(self.make_span_error(
                         format!(
                             "function '{}' is missing a return statement",
                             function.name.as_str()
                         ),
-                        span.clone(),
+                       *span,
                     ));
                 }
 
                 None => {
                     self.builder
                         .build_return(None)
-                        .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+                        .map_err(|e| self.make_span_error(e.to_string(),*span))?;
                 }
             }
         }

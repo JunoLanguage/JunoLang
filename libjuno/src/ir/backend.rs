@@ -30,7 +30,8 @@ pub struct LLVMBackend<'ctx> {
     pub module: Module<'ctx>,
 
     pub builder: Builder<'ctx>,
-
+    pub source_code: String,
+    pub source_file_name: String,
     pub program: &'ctx MetaProgram,
 
     pub functions: HashMap<FunctionId, FunctionValue<'ctx>>,
@@ -48,10 +49,11 @@ pub struct LLVMBackend<'ctx> {
 }
 
 impl<'ctx> LLVMBackend<'ctx> {
-    pub fn new(context: &'ctx Context, program: &'ctx MetaProgram, module_name: &str) -> Self {
+    pub fn new(context: &'ctx Context, program: &'ctx MetaProgram, module_name: &str, source_code: String, source_file_name: String) -> Self {
         let mut s = Self {
             context,
-
+            source_code,
+            source_file_name,
             module: context.create_module(module_name),
 
             builder: context.create_builder(),

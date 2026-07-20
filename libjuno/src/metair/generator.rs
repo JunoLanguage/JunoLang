@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ast::Program;
+use crate::ast::{JunoSpan, Program};
 use crate::metair::metair::*;
 
 /// Generator state used while lowering the AST into MetaIR.
@@ -8,7 +8,8 @@ use crate::metair::metair::*;
 /// The lowering logic itself is split across the other modules.
 pub struct MetaIRGen<'a> {
     pub program: &'a Program,
-
+    pub source_code: String,
+    pub source_file_name: String,
     /// struct_id -> (field_name -> field_index)
     pub struct_fields: HashMap<SymbolId, HashMap<String, u32>>,
 
@@ -38,10 +39,11 @@ pub struct MetaIRGen<'a> {
 }
 
 impl<'a> MetaIRGen<'a> {
-    pub fn new(program: &'a Program) -> Self {
+    pub fn new(program: &'a Program, source_code: String, source_file_name: String) -> Self {
         Self {
             program,
-
+            source_code,
+            source_file_name,
             struct_fields: HashMap::new(),
             strings: HashMap::new(),
             declarations: HashMap::new(),
@@ -54,6 +56,10 @@ impl<'a> MetaIRGen<'a> {
             next_struct_field: 0,
             counter: 0,
         }
+    }
+
+    pub fn make_span_error(&self, msg: &str, span: JunoSpan) -> miette::Error {
+        miette::Error::from(span.err_to_report(msg, self.source_code.clone(), &self.source_file_name))
     }
 }
 

@@ -35,7 +35,7 @@ impl<'a> MetaIRGen<'a> {
             Stmt::Let(stmt) => self.lower_let(stmt),
 
             Stmt::AssignStmt(assign) => MetaStmt::Assign {
-                span: assign.span.clone(),
+                span: assign.span,
                 target: assign.name.clone(),
                 value: self.lower_expr(&assign.value),
             },
@@ -43,15 +43,15 @@ impl<'a> MetaIRGen<'a> {
             Stmt::Expr(expr) => MetaStmt::Expr(self.lower_expr(expr)),
 
             Stmt::Return(expr, span) => {
-                MetaStmt::Return(expr.as_ref().map(|e| self.lower_expr(e)), span.clone())
+                MetaStmt::Return(expr.as_ref().map(|e| self.lower_expr(e)),*span)
             }
 
-            Stmt::Break(span) => MetaStmt::Break(span.clone()),
+            Stmt::Break(span) => MetaStmt::Break(*span),
 
-            Stmt::Continue(span) => MetaStmt::Continue(span.clone()),
+            Stmt::Continue(span) => MetaStmt::Continue(*span),
 
             Stmt::If(stmt) => MetaStmt::If {
-                span: stmt.span.clone(),
+                span: stmt.span,
                 cond: self.lower_expr(&stmt.condition),
 
                 then_body: self.lower_block(&stmt.then_block).0,
@@ -72,26 +72,26 @@ impl<'a> MetaIRGen<'a> {
                 let cond = self.lower_expr(&stmt.condition);
 
                 MetaStmt::Loop {
-                    span: stmt.span.clone(),
+                    span: stmt.span,
                     body: vec![MetaStmt::If {
-                        span: cond.span.clone(),
+                        span: cond.span,
 
                         cond: MetaExpr {
-                            span: cond.span.clone(),
+                            span: cond.span,
 
                             kind: MetaExprKind::Unary {
-                                span: cond.span.clone(),
+                                span: cond.span,
                                 op: MetaUnOp::Not,
                                 expr: Box::new(cond.clone()),
                             },
 
                             ty: MetaType::Named(
                                 "bool".to_string(),
-                                cond.span.clone(),
+                                cond.span,
                             ),
                         },
 
-                        then_body: vec![MetaStmt::Break(stmt.span.clone())],
+                        then_body: vec![MetaStmt::Break(stmt.span)],
 
                         else_ifs: Vec::new(),
 
@@ -101,13 +101,13 @@ impl<'a> MetaIRGen<'a> {
             }
 
             Stmt::Loop(body) => MetaStmt::Loop {
-                span: body.span.clone(),
+                span: body.span,
                 body: self.lower_block(body).0,
             },
 
             Stmt::For(stmt) => {
                 // TODO
-                MetaStmt::Break(stmt.span.clone())
+                MetaStmt::Break(stmt.span)
             }
         }
     }
@@ -123,7 +123,7 @@ impl<'a> MetaIRGen<'a> {
         self.insert_local(stmt.name.clone(), declared_ty.clone());
 
         MetaStmt::Let {
-            span: stmt.span.clone(),
+            span: stmt.span,
             name: stmt.name.clone(),
             mutable: stmt.mutable,
             ty: Some(declared_ty),

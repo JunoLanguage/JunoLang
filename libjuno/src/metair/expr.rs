@@ -16,54 +16,54 @@ impl<'a> MetaIRGen<'a> {
     pub(crate) fn lower_expr(&mut self, expr: &Expr) -> MetaExpr {
         match expr {
             Expr::Integer(value, ty, span) => MetaExpr {
-                span: span.clone(),
-                kind: MetaExprKind::Const(MetaConst::Int(*value, span.clone()), span.clone()),
+                span:*span,
+                kind: MetaExprKind::Const(MetaConst::Int(*value,*span),*span),
                 ty: ty
                     .as_ref()
                     .map(|t| self.lower_type(t))
-                    .unwrap_or_else(|| MetaType::Named("i32".to_string(), span.clone())),
+                    .unwrap_or_else(|| MetaType::Named("i32".to_string(),*span)),
             },
 
             Expr::Fractional(value, ty, span) => MetaExpr {
-                span: span.clone(),
+                span:*span,
                 kind: MetaExprKind::Const(
-                    MetaConst::Fractional(*value, span.clone()),
-                    span.clone(),
+                    MetaConst::Fractional(*value,*span),
+                   *span,
                 ),
                 ty: ty
                     .as_ref()
                     .map(|t| self.lower_type(t))
-                    .unwrap_or_else(|| MetaType::Named("f32".to_string(), span.clone())),
+                    .unwrap_or_else(|| MetaType::Named("f32".to_string(),*span)),
             },
 
             Expr::Boolean(value, span) => MetaExpr {
-                span: span.clone(),
-                kind: MetaExprKind::Const(MetaConst::Bool(*value, span.clone()), span.clone()),
-                ty: MetaType::Named("bool".into(), span.clone()),
+                span:*span,
+                kind: MetaExprKind::Const(MetaConst::Bool(*value,*span),*span),
+                ty: MetaType::Named("bool".into(),*span),
             },
 
             Expr::Char(value, span) => MetaExpr {
-                span: span.clone(),
-                kind: MetaExprKind::Const(MetaConst::Char(*value, span.clone()), span.clone()),
-                ty: MetaType::Named("char".into(), span.clone()),
+                span:*span,
+                kind: MetaExprKind::Const(MetaConst::Char(*value,*span),*span),
+                ty: MetaType::Named("char".into(),*span),
             },
 
             Expr::String(value, span) => {
                 let id = self.intern_string(value);
 
                 MetaExpr {
-                    span: span.clone(),
-                    kind: MetaExprKind::String(id, span.clone()),
+                    span:*span,
+                    kind: MetaExprKind::String(id,*span),
                     ty: MetaType::Pointer(
-                        Box::new(MetaType::Named("char".into(), span.clone())),
-                        span.clone(),
+                        Box::new(MetaType::Named("char".into(),*span)),
+                       *span,
                     ),
                 }
             }
 
             Expr::Var(name, span) => MetaExpr {
-                span: span.clone(),
-                kind: MetaExprKind::Var(name.clone(), span.clone()),
+                span:*span,
+                kind: MetaExprKind::Var(name.clone(),*span),
                 ty: self.lookup_local_type(name.clone()),
             },
 
@@ -73,15 +73,15 @@ impl<'a> MetaIRGen<'a> {
                 let elem_ty = values
                     .first()
                     .map(|e| e.ty.clone())
-                    .unwrap_or(MetaType::Unit(span.clone()));
+                    .unwrap_or(MetaType::Unit(*span));
 
                 let size = values.len() as u32;
 
                 MetaExpr {
-                    span: span.clone(),
-                    kind: MetaExprKind::Array(values, span.clone()),
+                    span:*span,
+                    kind: MetaExprKind::Array(values,*span),
                     ty: MetaType::Array {
-                        span: span.clone(),
+                        span:*span,
                         elem: Box::new(elem_ty),
                         size,
                     },
@@ -89,7 +89,7 @@ impl<'a> MetaIRGen<'a> {
             }
 
             Expr::StructInit(init) => {
-                let ty = MetaType::Named(init.name.clone(), init.span.clone());
+                let ty = MetaType::Named(init.name.clone(), init.span);
 
                 let fields = init
                     .fields
@@ -102,11 +102,11 @@ impl<'a> MetaIRGen<'a> {
                     .collect();
 
                 MetaExpr {
-                    span: init.span.clone(),
+                    span: init.span,
                     kind: MetaExprKind::StructInit {
                         name: init.name.clone(),
                         fields,
-                        span: init.span.clone(),
+                        span: init.span,
                     },
                     ty,
                 }
@@ -120,11 +120,11 @@ impl<'a> MetaIRGen<'a> {
                     .iter()
                     .map(|arg| match arg {
                         Arg::Positional(expr, span) => {
-                            MetaArg::Pos(self.lower_expr(expr), span.clone())
+                            MetaArg::Pos(self.lower_expr(expr),*span)
                         }
 
                         Arg::Named(name, expr, span) => {
-                            MetaArg::Named(name.clone(), self.lower_expr(expr), span.clone())
+                            MetaArg::Named(name.clone(), self.lower_expr(expr),*span)
                         }
                     })
                     .collect();
@@ -134,13 +134,13 @@ impl<'a> MetaIRGen<'a> {
                         .return_type
                         .as_ref()
                         .map(|t| self.lower_type(t))
-                        .unwrap_or(MetaType::Named("void".into(), call.span.clone())),
+                        .unwrap_or(MetaType::Named("void".into(), call.span)),
 
                     None => {
                         if let Some(decl) = self.declarations.get(&target) {
                             decl.ret
                                 .clone()
-                                .unwrap_or(MetaType::Named("void".into(), decl.span.clone()))
+                                .unwrap_or(MetaType::Named("void".into(), decl.span))
                         } else if let Some(builtin) = builtin_registry::get_builtin(&target) {
                             match &builtin.declare {
                                 builtin_registry::BuiltinEnum::Function { return_type, .. } => {
@@ -164,11 +164,11 @@ impl<'a> MetaIRGen<'a> {
                 };
 
                 MetaExpr {
-                    span: call.span.clone(),
+                    span: call.span,
                     kind: MetaExprKind::Call {
                         target,
                         args,
-                        span: call.span.clone(),
+                        span: call.span,
                     },
                     ty,
                 }
@@ -188,15 +188,15 @@ impl<'a> MetaIRGen<'a> {
                     | BinOp::Gt
                     | BinOp::Gte
                     | BinOp::And
-                    | BinOp::Or => MetaType::Named("bool".into(), binary.span.clone()),
+                    | BinOp::Or => MetaType::Named("bool".into(), binary.span),
 
                     _ => lhs.ty.clone(),
                 };
 
                 MetaExpr {
-                    span: binary.span.clone(),
+                    span: binary.span,
                     kind: MetaExprKind::Binary {
-                        span: binary.span.clone(),
+                        span: binary.span,
                         op: self.lower_binop(&binary.op),
                         lhs: Box::new(lhs),
                         rhs: Box::new(rhs),
@@ -209,7 +209,7 @@ impl<'a> MetaIRGen<'a> {
                 let expr = self.lower_expr(&unary.expr);
 
                 let ty = match unary.op {
-                    UnOp::Ref => MetaType::Pointer(Box::new(expr.ty.clone()), unary.span.clone()),
+                    UnOp::Ref => MetaType::Pointer(Box::new(expr.ty.clone()), unary.span),
 
                     UnOp::Deref => match &expr.ty {
                         MetaType::Pointer(inner, _) | MetaType::Reference(inner, _) => {
@@ -223,9 +223,9 @@ impl<'a> MetaIRGen<'a> {
                 };
 
                 MetaExpr {
-                    span: unary.span.clone(),
+                    span: unary.span,
                     kind: MetaExprKind::Unary {
-                        span: unary.span.clone(),
+                        span: unary.span,
                         op: self.lower_unop(&unary.op),
                         expr: Box::new(expr),
                     },

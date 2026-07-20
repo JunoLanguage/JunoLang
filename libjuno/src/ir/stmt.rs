@@ -48,23 +48,23 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
     fn lower_continue(&mut self, span: &JunoSpan) -> Result<(), LLVMError> {
         let frame = self.loop_stack.last().ok_or_else(|| {
-            LLVMError::SpanMessage("continue used outside of a loop".to_string(), span.clone())
+            self.make_span_error("continue used outside of a loop".to_string(),*span)
         })?;
 
         self.builder
             .build_unconditional_branch(frame.continue_block)
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         Ok(())
     }
     fn lower_break(&mut self, span: &JunoSpan) -> Result<(), LLVMError> {
         let frame = self.loop_stack.last().ok_or_else(|| {
-            LLVMError::SpanMessage("break used outside of a loop".to_string(), span.clone())
+            self.make_span_error("break used outside of a loop".to_string(),*span)
         })?;
 
         self.builder
             .build_unconditional_branch(frame.break_block)
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         Ok(())
     }
@@ -79,13 +79,13 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         self.builder
             .build_unconditional_branch(header_bb)
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         self.builder.position_at_end(header_bb);
 
         self.builder
             .build_unconditional_branch(body_bb)
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         self.builder.position_at_end(body_bb);
 
@@ -123,7 +123,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         {
             self.builder
                 .build_unconditional_branch(header_bb)
-                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+                .map_err(|e| self.make_span_error(e.to_string(),*span))?;
         }
 
         self.builder.position_at_end(exit_bb);
@@ -150,7 +150,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         self.builder
             .build_conditional_branch(cond, then_bb, first_else_bb)
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         self.builder.position_at_end(then_bb);
 
@@ -181,7 +181,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         {
             self.builder
                 .build_unconditional_branch(merge_bb)
-                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+                .map_err(|e| self.make_span_error(e.to_string(),*span))?;
         }
 
         self.builder.position_at_end(first_else_bb);
@@ -221,7 +221,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         {
             self.builder
                 .build_unconditional_branch(merge_bb)
-                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+                .map_err(|e| self.make_span_error(e.to_string(),*span))?;
         }
 
         self.builder.position_at_end(merge_bb);
@@ -235,13 +235,13 @@ impl<'ctx> LLVMBackend<'ctx> {
 
                 self.builder
                     .build_return(Some(&value))
-                    .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+                    .map_err(|e| self.make_span_error(e.to_string(),*span))?;
             }
 
             None => {
                 self.builder
                     .build_return(None)
-                    .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+                    .map_err(|e| self.make_span_error(e.to_string(),*span))?;
             }
         }
 
@@ -262,7 +262,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         self.builder
             .build_store(ptr, value)
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?;
         Ok(())
     }
     fn lower_let(
@@ -273,14 +273,14 @@ impl<'ctx> LLVMBackend<'ctx> {
         span: &JunoSpan,
     ) -> Result<(), LLVMError> {
         let ty =
-            ty.ok_or_else(|| LLVMError::SpanMessage("let without type".to_string(), span.clone()))?;
+            ty.ok_or_else(|| self.make_span_error("let without type".to_string(),*span))?;
 
         let llvm_ty = self.lower_type(ty, span)?;
 
         let ptr = self
             .builder
             .build_alloca(llvm_ty, name.as_str())
-            .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+            .map_err(|e| self.make_span_error(e.to_string(),*span))?;
 
         self.insert_variable(name, ptr, llvm_ty);
 
@@ -289,7 +289,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
             self.builder
                 .build_store(ptr, value)
-                .map_err(|e| LLVMError::SpanMessage(e.to_string(), span.clone()))?;
+                .map_err(|e| self.make_span_error(e.to_string(),*span))?;
         }
 
         Ok(())

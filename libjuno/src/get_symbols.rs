@@ -55,11 +55,11 @@ pub fn get_symbols(input: String, namespace: String, filename: Option<String>) -
         pairs.into_iter().next().unwrap(),
         namespace,
         input.clone().into(),
-        filename.into(),
+        filename.clone().into(),
     )
     .unwrap();
     let expr = Box::leak(Box::new(expr_owned));
-    let metairgen = Box::leak(Box::new(MetaIRGen::new(expr)));
+    let metairgen = Box::leak(Box::new(MetaIRGen::new(expr, input, filename)));
     let metair = Box::leak(Box::new(metairgen.lower_program(expr)));
     let mut symbols = vec![];
     for (f_name, f) in &metair.functions {

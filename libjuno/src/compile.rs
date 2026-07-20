@@ -18,8 +18,8 @@ pub fn compile_file(p: &Path, pkg_name: Option<String>) -> Module<'static> {
         ),
         Ok(s) => s,
     };
-
-    let pairs = match JunoParser::parse(Rule::program, &input.as_str()) {
+    let file_name = p.to_str().unwrap();
+    let pairs = match JunoParser::parse(Rule::program, &input) {
         Ok(pairs) => pairs,
         Err(e) => {
             panic!("{e}");
@@ -33,10 +33,10 @@ pub fn compile_file(p: &Path, pkg_name: Option<String>) -> Module<'static> {
     )
     .unwrap();
     let expr = Box::leak(Box::new(expr_owned));
-    let metairgen = Box::leak(Box::new(MetaIRGen::new(expr)));
+    let metairgen = Box::leak(Box::new(MetaIRGen::new(expr, input.clone(), file_name.to_string())));
     let metair = Box::leak(Box::new(metairgen.lower_program(expr)));
     let context = Box::leak(Box::new(inkwell::context::Context::create()));
-    let mut irgen = LLVMBackend::new(context, metair, "main");
+    let mut irgen = LLVMBackend::new(context, metair, "main", input.clone(), file_name.to_string());
 
     if let Err(e) = irgen.compile() {
         eprintln!("{}", e);
