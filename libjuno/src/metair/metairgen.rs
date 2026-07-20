@@ -16,7 +16,6 @@ use crate::{JunoParser, Rule, ast::*, builtin_registry, get_builtin_id, is_built
 
 pub struct MetaIRGen<'a> {
     pub program: &'a Program,
-    pub symbols: HashMap<String, SymbolId>,
     pub struct_fields: HashMap<SymbolId, HashMap<String, u32>>, // struct_id => {field_name1 => field_id1, ...}
     pub strings: HashMap<String, StringId>,
     pub declarations: HashMap<String, MetaDeclaration>,
@@ -24,10 +23,7 @@ pub struct MetaIRGen<'a> {
     pub string_list: Vec<String>,
     pub locals: Vec<HashMap<SymbolId, MetaType>>,
     pub structs: HashMap<String, MetaStruct>,
-    next_symbol: u32,
     next_string: u32,
-    next_func: u32,
-    next_type: u32,
     next_struct_field: u32,
     counter: u32,
 }
@@ -44,16 +40,12 @@ impl<'a> MetaIRGen<'a> {
             program: p,
             declarations: HashMap::new(),
             locals: Vec::new(),
-            symbols: HashMap::new(),
             struct_fields: HashMap::new(),
             strings: HashMap::new(),
             structs: HashMap::new(),
             symbol_list: vec![],
             string_list: vec![],
-            next_symbol: 0,
             next_string: 0,
-            next_func: 0,
-            next_type: 0,
             next_struct_field: 0,
             counter: 0,
         }
@@ -64,7 +56,11 @@ impl<'a> MetaIRGen<'a> {
     // =======================
 
     pub(in crate::metair) fn intern_symbol(&mut self, s: &str) -> SymbolId {
-        return s.to_string();
+        let s = s.to_string();
+        if !self.symbol_list.contains(&s) {
+            self.symbol_list.push(s.clone()); // FIXME no cloning
+        }
+        return s;
     }
     fn intern_struct_field(&mut self, struct_id: SymbolId, field_name: &str) -> u32 {
         if let Some(fields) = self.struct_fields.get(&struct_id) {
@@ -142,7 +138,6 @@ impl<'a> MetaIRGen<'a> {
         MetaProgram {
             span,
             functions,
-            symbols: self.symbols.clone(),
             structs: self.structs.clone(),
             declarations,
             string_table: self.string_list.clone(),
@@ -155,9 +150,6 @@ impl<'a> MetaIRGen<'a> {
     // Functions
     // =======================
     fn lower_function(&mut self, f: &Function) -> MetaFunction {
-        let id = self.next_func;
-        self.next_func += 1;
-
         self.locals.push(HashMap::new());
 
         let name = self.intern_symbol(&f.name);
@@ -166,7 +158,7 @@ impl<'a> MetaIRGen<'a> {
 
         for p in &f.params {
             let span = p.span.clone().to_owned();
-            let sym = self.intern_symbol(&p.name);
+            let sym = p.name.clone();
             let ty = self.lower_type(&p.ty);
 
             self.locals
@@ -206,9 +198,6 @@ impl<'a> MetaIRGen<'a> {
     }
 
     fn lower_declaration(&mut self, f: &Declaration) -> MetaDeclaration {
-        let id = self.next_func;
-        self.next_func += 1;
-
         self.locals.push(HashMap::new());
 
         let name = self.intern_symbol(&f.name);
@@ -216,7 +205,7 @@ impl<'a> MetaIRGen<'a> {
         let mut params = Vec::new();
 
         for p in &f.params {
-            let sym = self.intern_symbol(&p.name);
+            let sym = p.name.clone();
             let ty = self.lower_type(&p.ty);
 
             self.locals
@@ -263,7 +252,7 @@ impl<'a> MetaIRGen<'a> {
 
             Stmt::AssignStmt(e) => MetaStmt::Assign {
                 span: e.span.clone(),
-                target: self.intern_symbol(&e.name),
+                target: e.name.clone(),
                 value: self.lower_expr(&e.value),
             },
 
@@ -303,7 +292,7 @@ impl<'a> MetaIRGen<'a> {
                                 op: MetaUnOp::Not,
                                 expr: Box::new(cond.clone()),
                             },
-                            ty: MetaType::Named(self.intern_symbol("bool"), cond.span.clone()),
+                            ty: MetaType::Named("bool".to_string(), cond.span.clone()),
                         },
 
                         then_body: vec![MetaStmt::Break(w.span.clone())],
@@ -333,12 +322,12 @@ impl<'a> MetaIRGen<'a> {
             value
         });
 
-        let id = self.intern_symbol(&stmt.name);
+        let id = stmt.name.clone();
 
         self.insert_local(id, declared_ty.clone());
         MetaStmt::Let {
             span: stmt.span.clone(),
-            name: self.intern_symbol(&stmt.name),
+            name: stmt.name.clone(),
             mutable: stmt.mutable,
             ty: Some(declared_ty),
             value,
@@ -415,7 +404,7 @@ impl<'a> MetaIRGen<'a> {
                 span: span.clone(),
                 kind: MetaExprKind::Const(MetaConst::Int(*n, span.clone()), span.clone()),
                 ty: match type_ {
-                    None => MetaType::Named(self.intern_symbol("i32"), span.clone()),
+                    None => MetaType::Named("i32".to_string(), span.clone()),
                     Some(t) => self.lower_type(t),
                 },
             },
@@ -423,20 +412,20 @@ impl<'a> MetaIRGen<'a> {
                 span: span.clone(),
                 kind: MetaExprKind::Const(MetaConst::Fractional(*n, span.clone()), span.clone()),
                 ty: match type_ {
-                    None => MetaType::Named(self.intern_symbol("f32"), span.clone()),
+                    None => MetaType::Named("f32".to_string(), span.clone()),
                     Some(t) => self.lower_type(t),
                 },
             },
             Expr::Boolean(b, span) => MetaExpr {
                 span: span.clone(),
                 kind: MetaExprKind::Const(MetaConst::Bool(*b, span.clone()), span.clone()),
-                ty: MetaType::Named(self.intern_symbol("bool"), span.clone()),
+                ty: MetaType::Named("bool".to_string(), span.clone()),
             },
 
             Expr::Char(c, span) => MetaExpr {
                 span: span.clone(),
                 kind: MetaExprKind::Const(MetaConst::Char(*c, span.clone()), span.clone()),
-                ty: MetaType::Named(self.intern_symbol("char"), span.clone()),
+                ty: MetaType::Named("char".to_string(), span.clone()),
             },
 
             Expr::String(s, span) => {
@@ -446,19 +435,18 @@ impl<'a> MetaIRGen<'a> {
                     span: span.clone(),
                     kind: MetaExprKind::String(id, span.clone()),
                     ty: MetaType::Pointer(
-                        Box::new(MetaType::Named(self.intern_symbol("char"), span.clone())),
+                        Box::new(MetaType::Named("char".to_string(), span.clone())),
                         span.clone(),
                     ),
                 }
             }
 
             Expr::Var(name, span) => {
-                let id = self.intern_symbol(name);
-                let ty = self.lookup_local_type(id.clone());
+                let ty = self.lookup_local_type(name.clone());
 
                 MetaExpr {
                     span: span.clone(),
-                    kind: MetaExprKind::Var(id.clone(), span.clone()),
+                    kind: MetaExprKind::Var(name.clone(), span.clone()),
                     ty,
                 }
             }
@@ -489,12 +477,12 @@ impl<'a> MetaIRGen<'a> {
                     .map(|f| (self.counter(), self.lower_expr(&f.value)))
                     .collect();
                 self.reset_counter();
-                let ty = MetaType::Named(self.intern_symbol(&s.name), s.span.clone());
+                let ty = MetaType::Named(s.name.clone(), s.span.clone());
 
                 MetaExpr {
                     span: s.span.clone(),
                     kind: MetaExprKind::StructInit {
-                        name: self.intern_symbol(&s.name),
+                        name: s.name.clone(),
                         fields,
                         span: s.span.clone(),
                     },
@@ -511,7 +499,7 @@ impl<'a> MetaIRGen<'a> {
                         Arg::Positional(e, span) => MetaArg::Pos(self.lower_expr(e), span.clone()),
 
                         Arg::Named(name, e, span) => MetaArg::Named(
-                            self.intern_symbol(name),
+                            name.clone(),
                             self.lower_expr(e),
                             span.clone(),
                         ),
@@ -578,7 +566,7 @@ impl<'a> MetaIRGen<'a> {
                     | BinOp::Gt
                     | BinOp::Gte
                     | BinOp::And
-                    | BinOp::Or => MetaType::Named(self.intern_symbol("bool"), b.span.clone()),
+                    | BinOp::Or => MetaType::Named("bool".to_string(), b.span.clone()),
 
                     _ => lhs.ty.clone(),
                 };
@@ -696,7 +684,7 @@ impl<'a> MetaIRGen<'a> {
 
     fn lower_type(&mut self, t: &Type) -> MetaType {
         match t {
-            Type::Named(n, span) => MetaType::Named(self.intern_symbol(n), span.clone()),
+            Type::Named(n, span) => MetaType::Named(n.to_string(), span.clone()),
 
             Type::Pointer(inner, span) => {
                 MetaType::Pointer(Box::new(self.lower_type(inner)), span.clone())

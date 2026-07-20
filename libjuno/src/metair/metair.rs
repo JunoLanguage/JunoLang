@@ -35,7 +35,6 @@ pub struct MetaProgram {
     pub struct_fields: HashMap<SymbolId, Vec<String>>,
     pub string_table: Vec<String>,
     pub symbol_table: Vec<String>,
-    pub symbols: HashMap<SymbolId, String>,
 }
 
 // =======================

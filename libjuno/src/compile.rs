@@ -36,6 +36,8 @@ pub fn compile_file(p: &Path, pkg_name: Option<String>) -> Module<'static> {
     let metairgen = Box::leak(Box::new(MetaIRGen::new(expr)));
     let metair = Box::leak(Box::new(metairgen.lower_program(expr)));
     let context = Box::leak(Box::new(inkwell::context::Context::create()));
+    println!("========== METAIR ==========");
+    println!("{:#?}", metair);
     let mut irgen = LLVMBackend::new(context, metair, "main");
 
     if let Err(e) = irgen.compile() {
