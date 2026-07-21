@@ -1,81 +1,89 @@
-use pest::Parser;
-use pest::iterators::Pair;
+use pest::{Parser, iterators::Pair};
 
-use crate::ast::*;
-use crate::builtin_registry;
-use crate::metair::generator::MetaIRGen;
-use crate::metair::metair::*;
-use crate::parser::JunoASTParser;
-use crate::{JunoParser, Rule};
+use crate::{
+    JunoParser, MetaArg, MetaConst, MetaExpr, MetaExprKind, MetaIRGen, MetaType, Rule,
+    ast::{Arg, BinOp, Expr, UnOp},
+    builtin_registry,
+    parser::JunoASTParser,
+};
 
 impl<'a> MetaIRGen<'a> {
-    // =======================
-    // Expressions
-    // =======================
-
     pub(crate) fn lower_expr(&mut self, expr: &Expr) -> MetaExpr {
-        match expr {
+        match expr.clone() {
             Expr::Integer(value, ty, span) => MetaExpr {
-                span: *span,
-                kind: MetaExprKind::Const(MetaConst::Int(*value, *span), *span),
+                span,
+                kind: MetaExprKind::Const(MetaConst::Int(value, span), span),
                 ty: ty
                     .as_ref()
                     .map(|t| self.lower_type(t))
-                    .unwrap_or_else(|| MetaType::Named("i32".to_string(), *span)),
+                    .unwrap_or_else(|| MetaType::Named("i32".into(), span)),
             },
 
             Expr::Fractional(value, ty, span) => MetaExpr {
-                span: *span,
-                kind: MetaExprKind::Const(MetaConst::Fractional(*value, *span), *span),
+                span,
+                kind: MetaExprKind::Const(MetaConst::Fractional(value, span), span),
                 ty: ty
                     .as_ref()
                     .map(|t| self.lower_type(t))
-                    .unwrap_or_else(|| MetaType::Named("f32".to_string(), *span)),
+                    .unwrap_or_else(|| MetaType::Named("f32".into(), span)),
             },
 
             Expr::Boolean(value, span) => MetaExpr {
-                span: *span,
-                kind: MetaExprKind::Const(MetaConst::Bool(*value, *span), *span),
-                ty: MetaType::Named("bool".into(), *span),
+                span,
+                kind: MetaExprKind::Const(MetaConst::Bool(value, span), span),
+                ty: MetaType::Named("bool".into(), span),
             },
 
             Expr::Char(value, span) => MetaExpr {
-                span: *span,
-                kind: MetaExprKind::Const(MetaConst::Char(*value, *span), *span),
-                ty: MetaType::Named("char".into(), *span),
+                span,
+                kind: MetaExprKind::Const(MetaConst::Char(value, span), span),
+                ty: MetaType::Named("char".into(), span),
             },
 
             Expr::String(value, span) => {
-                let id = self.intern_string(value);
-
+                let id = self.intern_string(&value);
                 MetaExpr {
-                    span: *span,
-                    kind: MetaExprKind::String(id, *span),
-                    ty: MetaType::Pointer(Box::new(MetaType::Named("char".into(), *span)), *span),
+                    span,
+                    kind: MetaExprKind::String(id, span),
+                    ty: MetaType::Pointer(Box::new(MetaType::Named("char".into(), span)), span),
                 }
             }
 
-            Expr::Var(name, span) => MetaExpr {
-                span: *span,
-                kind: MetaExprKind::Var(name.clone(), *span),
-                ty: self.lookup_local_type(name.clone()),
-            },
+            Expr::Var(name, span) => {
+                let ty = self.lookup_local_type(name.clone());
+                MetaExpr {
+                    span,
+                    kind: MetaExprKind::Var(name, span),
+                    ty,
+                }
+            }
 
             Expr::Array(values, span) => {
-                let values: Vec<_> = values.iter().map(|e| self.lower_expr(e)).collect();
+                let len = values.len();
+                let mut it = values.into_iter();
 
-                let elem_ty = values
-                    .first()
-                    .map(|e| e.ty.clone())
-                    .unwrap_or(MetaType::Unit(*span));
+                let first = it.next();
+                let mut lowered: Vec<MetaExpr> = Vec::with_capacity(len);
+                let mut elem_ty = None;
 
-                let size = values.len() as u32;
+                if let Some(e) = first {
+                    let first_lowered = self.lower_expr(&e);
+                    elem_ty = Some(first_lowered.ty.clone());
+                    lowered.push(first_lowered);
+                }
+
+                for e in it {
+                    lowered.push(self.lower_expr(&e));
+                }
+
+                let elem_ty = elem_ty.unwrap_or(MetaType::Unit(span));
+                let size = lowered.len() as u32;
 
                 MetaExpr {
-                    span: *span,
-                    kind: MetaExprKind::Array(values, *span),
+                    span,
+                    kind: MetaExprKind::Array(lowered, span),
                     ty: MetaType::Array {
-                        span: *span,
+                        span,
                         elem: Box::new(elem_ty),
                         size,
                     },
@@ -83,40 +91,38 @@ impl<'a> MetaIRGen<'a> {
             }
 
             Expr::StructInit(init) => {
-                let ty = MetaType::Named(init.name.clone(), init.span);
+                let name = init.name;
+                let span = init.span;
 
-                let fields = init
+                let fields: Vec<_> = init
                     .fields
-                    .iter()
+                    .into_iter()
                     .map(|field| {
-                        let index = self.intern_struct_field(init.name.clone(), &field.name);
-
+                        let index = self.intern_struct_field(name.clone(), &field.name);
                         (index, self.lower_expr(&field.value))
                     })
                     .collect();
 
+                let ty = MetaType::Named(name.clone(), span);
+
                 MetaExpr {
-                    span: init.span,
-                    kind: MetaExprKind::StructInit {
-                        name: init.name.clone(),
-                        fields,
-                        span: init.span,
-                    },
+                    span,
+                    kind: MetaExprKind::StructInit { name, fields, span },
                     ty,
                 }
             }
 
             Expr::Call(call) => {
-                let target = call.target.clone();
+                let target = call.target;
+                let span = call.span;
 
-                let args = call
+                let args: Vec<_> = call
                     .args
-                    .iter()
+                    .into_iter()
                     .map(|arg| match arg {
-                        Arg::Positional(expr, span) => MetaArg::Pos(self.lower_expr(expr), *span),
-
-                        Arg::Named(name, expr, span) => {
-                            MetaArg::Named(name.clone(), self.lower_expr(expr), *span)
+                        Arg::Positional(expr, s) => MetaArg::Pos(self.lower_expr(&expr), s),
+                        Arg::Named(name, expr, s) => {
+                            MetaArg::Named(name, self.lower_expr(&expr), s)
                         }
                     })
                     .collect();
@@ -126,7 +132,7 @@ impl<'a> MetaIRGen<'a> {
                         .return_type
                         .as_ref()
                         .map(|t| self.lower_type(t))
-                        .unwrap_or(MetaType::Named("void".into(), call.span)),
+                        .unwrap_or_else(|| MetaType::Named("void".into(), span)),
 
                     None => {
                         if let Some(decl) = self.declarations.get(&target) {
@@ -139,12 +145,14 @@ impl<'a> MetaIRGen<'a> {
                                     let parsed: Vec<Pair<Rule>> =
                                         JunoParser::parse(Rule::type_, return_type)
                                             .unwrap()
+                                            .into_iter()
                                             .collect();
 
                                     let parser = JunoASTParser::new("_".into());
 
-                                    let ast_ty =
-                                        parser.parse_type(parsed.first().unwrap().clone()).unwrap();
+                                    let ast_ty = parser
+                                        .parse_type(parsed.into_iter().next().unwrap())
+                                        .unwrap();
 
                                     self.lower_type(&ast_ty)
                                 }
@@ -156,23 +164,20 @@ impl<'a> MetaIRGen<'a> {
                 };
 
                 MetaExpr {
-                    span: call.span,
-                    kind: MetaExprKind::Call {
-                        target,
-                        args,
-                        span: call.span,
-                    },
+                    span,
+                    kind: MetaExprKind::Call { target, args, span },
                     ty,
                 }
             }
 
             Expr::Binary(binary) => {
+                let op = binary.op;
+                let span = binary.span;
                 let lhs = self.lower_expr(&binary.left);
                 let rhs = self.lower_expr(&binary.right);
-
                 let (lhs, rhs) = self.coerce_binary(lhs, rhs).unwrap();
 
-                let ty = match binary.op {
+                let ty = match op {
                     BinOp::Eq
                     | BinOp::Neq
                     | BinOp::Lt
@@ -180,16 +185,16 @@ impl<'a> MetaIRGen<'a> {
                     | BinOp::Gt
                     | BinOp::Gte
                     | BinOp::And
-                    | BinOp::Or => MetaType::Named("bool".into(), binary.span),
+                    | BinOp::Or => MetaType::Named("bool".into(), span),
 
                     _ => lhs.ty.clone(),
                 };
 
                 MetaExpr {
-                    span: binary.span,
+                    span,
                     kind: MetaExprKind::Binary {
-                        span: binary.span,
-                        op: self.lower_binop(&binary.op),
+                        span,
+                        op: self.lower_binop(&op),
                         lhs: Box::new(lhs),
                         rhs: Box::new(rhs),
                     },
@@ -198,27 +203,26 @@ impl<'a> MetaIRGen<'a> {
             }
 
             Expr::Unary(unary) => {
+                let op = unary.op;
+                let span = unary.span;
                 let expr = self.lower_expr(&unary.expr);
 
-                let ty = match unary.op {
-                    UnOp::Ref => MetaType::Pointer(Box::new(expr.ty.clone()), unary.span),
-
+                let ty = match op {
+                    UnOp::Ref => MetaType::Pointer(Box::new(expr.ty.clone()), span),
                     UnOp::Deref => match &expr.ty {
                         MetaType::Pointer(inner, _) | MetaType::Reference(inner, _) => {
                             (**inner).clone()
                         }
-
                         _ => expr.ty.clone(),
                     },
-
                     _ => expr.ty.clone(),
                 };
 
                 MetaExpr {
-                    span: unary.span,
+                    span,
                     kind: MetaExprKind::Unary {
-                        span: unary.span,
-                        op: self.lower_unop(&unary.op),
+                        span,
+                        op: self.lower_unop(&op),
                         expr: Box::new(expr),
                     },
                     ty,
