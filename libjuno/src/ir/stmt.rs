@@ -13,8 +13,10 @@ impl<'ctx> LLVMBackend<'ctx> {
                 mutable: _,
                 ty,
                 value,
-            } => self.lower_let(name.clone(), ty.as_ref(), value.as_ref(), span),
+            } => self.lower_let(name, ty.as_ref(), value.as_ref(), span),
+
             MetaStmt::Break(span) => self.lower_break(span),
+
             MetaStmt::If {
                 span,
                 cond,
@@ -22,21 +24,27 @@ impl<'ctx> LLVMBackend<'ctx> {
                 else_ifs,
                 else_body,
             } => self.lower_if(cond, then_body, else_ifs, else_body.as_ref(), span),
+
             MetaStmt::Continue(span) => self.lower_continue(span),
+
             MetaStmt::Loop { span, body } => self.lower_loop(body, span),
+
             MetaStmt::Return(expr, span) => self.lower_return(expr.as_ref(), span),
+
             MetaStmt::Assign {
                 span,
                 target,
                 value,
-            } => self.lower_assign(target.clone(), value, span),
+            } => self.lower_assign(target, value, span),
+
             MetaStmt::Expr(expr) => self.lower_expr_stmt(expr, &expr.span),
         }
     }
+
     fn lower_expr_stmt(&mut self, expr: &MetaExpr, span: &JunoSpan) -> Result<(), LLVMError> {
         match &expr.kind {
             MetaExprKind::Call { span, target, args } => {
-                self.lower_call(target.clone(), args, span)?;
+                self.lower_call(target, args, span)?;
             }
 
             _ => {
@@ -46,6 +54,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(())
     }
+
     fn lower_continue(&mut self, span: &JunoSpan) -> Result<(), LLVMError> {
         let frame = self.loop_stack.last().ok_or_else(|| {
             self.make_span_error("continue used outside of a loop".to_string(), *span)
@@ -57,6 +66,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(())
     }
+
     fn lower_break(&mut self, span: &JunoSpan) -> Result<(), LLVMError> {
         let frame = self.loop_stack.last().ok_or_else(|| {
             self.make_span_error("break used outside of a loop".to_string(), *span)
@@ -68,13 +78,12 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(())
     }
+
     fn lower_loop(&mut self, body: &[MetaStmt], span: &JunoSpan) -> Result<(), LLVMError> {
         let function = self.current_function();
 
         let header_bb = self.context.append_basic_block(function, "loop.header");
-
         let body_bb = self.context.append_basic_block(function, "loop.body");
-
         let exit_bb = self.context.append_basic_block(function, "loop.exit");
 
         self.builder
@@ -130,6 +139,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(())
     }
+
     fn lower_if(
         &mut self,
         cond: &MetaExpr,
@@ -141,9 +151,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         let function = self.current_function();
 
         let merge_bb = self.context.append_basic_block(function, "if.merge");
-
         let then_bb = self.context.append_basic_block(function, "if.then");
-
         let first_else_bb = self.context.append_basic_block(function, "if.else");
 
         let cond = self.lower_expr(cond, &cond.span)?.into_int_value();
@@ -208,7 +216,6 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
         } else {
             let (cond, body) = &else_ifs[0];
-
             self.lower_if(cond, body, &else_ifs[1..], else_body, span)?;
         }
 
@@ -228,6 +235,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(())
     }
+
     fn lower_return(&mut self, value: Option<&MetaExpr>, span: &JunoSpan) -> Result<(), LLVMError> {
         match value {
             Some(expr) => {
@@ -247,9 +255,10 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(())
     }
+
     fn lower_assign(
         &mut self,
-        target: SymbolId,
+        target: &str,
         value: &MetaExpr,
         span: &JunoSpan,
     ) -> Result<(), LLVMError> {
@@ -265,9 +274,10 @@ impl<'ctx> LLVMBackend<'ctx> {
             .map_err(|e| self.make_span_error(e.to_string(), *span))?;
         Ok(())
     }
+
     fn lower_let(
         &mut self,
-        name: SymbolId,
+        name: &str,
         ty: Option<&MetaType>,
         value: Option<&MetaExpr>,
         span: &JunoSpan,
@@ -278,7 +288,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         let ptr = self
             .builder
-            .build_alloca(llvm_ty, name.as_str())
+            .build_alloca(llvm_ty, name)
             .map_err(|e| self.make_span_error(e.to_string(), *span))?;
 
         self.insert_variable(name, ptr, llvm_ty);

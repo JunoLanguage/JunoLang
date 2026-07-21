@@ -20,11 +20,11 @@ impl<'ctx> Scope<'ctx> {
         }
     }
 
-    pub fn insert(&mut self, id: SymbolId, ptr: PointerValue<'ctx>, ty: BasicTypeEnum<'ctx>) {
-        self.variables.insert(id, Variable { ptr, ty });
+    pub fn insert(&mut self, id: &str, ptr: PointerValue<'ctx>, ty: BasicTypeEnum<'ctx>) {
+        self.variables.insert(id.to_string(), Variable { ptr, ty });
     }
 
-    pub fn get(&self, id: SymbolId) -> Option<&Variable<'ctx>> {
-        self.variables.get(&id)
+    pub fn get(&self, id: &str) -> Option<&Variable<'ctx>> {
+        self.variables.get(id)
     }
 }

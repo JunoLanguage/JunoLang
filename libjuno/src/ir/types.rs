@@ -16,14 +16,14 @@ impl<'ctx> LLVMBackend<'ctx> {
                 Ok(self
                     .context
                     .ptr_type(AddressSpace::default())
-                    .as_basic_type_enum()) // TODO ptr_type is deprecated, searching for alternative
+                    .as_basic_type_enum())
             }
 
             MetaType::Reference(_inner, _span) => {
                 Ok(self
                     .context
                     .ptr_type(AddressSpace::default())
-                    .as_basic_type_enum()) // TODO
+                    .as_basic_type_enum())
             }
             MetaType::Array { elem, size, span } => {
                 Ok(self.lower_type(elem, span)?.array_type(*size).into())
@@ -50,13 +50,12 @@ impl<'ctx> LLVMBackend<'ctx> {
                 _ => {
                     if self.program.structs.contains_key(id) {
                         if !self.structs.contains_key(id) {
-                            //return self.struct_type(&self.program.structs[&id.clone()], span).map(|x| x.as_basic_type_enum())
                             return Err(self.make_span_error(
                                 "Struct found but not in irgen, maybe a compiler bug?".to_string(),
                                 *span,
                             ));
                         }
-                        return match self.get_struct(id.clone()) {
+                        return match self.get_struct(id) {
                             Err(e) => Err(e),
                             Ok(s) => Ok(s.into()),
                         };
@@ -64,13 +63,15 @@ impl<'ctx> LLVMBackend<'ctx> {
                     Err(LLVMError::UnknownType(id.clone()))
                 }
             },
-            MetaType::Unit(_span) => todo!(), //e => Err(LLVMError::Message(format!("type not implemented: {:#?}", e).into())),
+            MetaType::Unit(_span) => todo!(),
         }
     }
 
     pub fn get_named_from_type(&self, ty: &MetaType) -> Result<String, LLVMError> {
         match ty {
-            MetaType::Named(name, _juno_span) => Ok(name.clone()),
+            MetaType::Named(name, _juno_span) => {
+                Ok(name.clone())
+            }
             MetaType::Pointer(meta_type, _juno_span) => self.get_named_from_type(meta_type),
             MetaType::Reference(meta_type, _juno_span) => self.get_named_from_type(meta_type),
             MetaType::Array {

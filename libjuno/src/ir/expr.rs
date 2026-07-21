@@ -19,7 +19,7 @@ impl<'ctx> LLVMBackend<'ctx> {
             MetaExprKind::Unary { op, expr, span } => self.lower_unary(op, expr, span),
 
             MetaExprKind::Call { target, args, span } => {
-                self.lower_call(target.clone(), args, span)?.ok_or_else(|| {
+                self.lower_call(target, args, span)?.ok_or_else(|| {
                     self.make_span_error("void function used as expression".to_string(), *span)
                 })
             }
@@ -111,18 +111,14 @@ impl<'ctx> LLVMBackend<'ctx> {
             MetaExprKind::Var(id, span) => {
                 let meta = self.current_meta_function();
                 let locals = &meta.locals;
-                self.get_variable_expr(id.clone(), locals, span)
-                /*Ok(self
-                .builder
-                .build_load(var.ty, var.ptr, id)
-                .map_err(|e| self.make_span_error(e.to_string(),*span))?)*/
+                self.get_variable_expr(id, locals, span)
             }
             MetaExprKind::StructInit {
                 span: _,
                 name,
                 fields,
             } => {
-                let s = self.get_struct(name.clone())?;
+                let s = self.get_struct(name)?;
                 let s_ptr = self.builder.build_alloca(s, "tmp").unwrap();
 
                 for (idx, expr) in fields {
@@ -144,13 +140,13 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
     pub fn get_variable_expr(
         &self,
-        id: SymbolId,
+        id: &str,
         locals: &HashMap<SymbolId, MetaType>,
         span: &JunoSpan,
     ) -> Result<BasicValueEnum<'ctx>, LLVMError> {
         let parts: Vec<&str> = id.split('.').collect();
 
-        let var = self.get_variable(parts[0].to_string())?;
+        let var = self.get_variable(parts[0])?;
         let struct_ty = locals.get(parts[0]);
         let mut ptr = var.ptr;
         let mut ty = var.ty;
@@ -182,6 +178,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(self.builder.build_load(ty, ptr, "load")?)
     }
+
     fn lower_unary(
         &self,
         op: &MetaUnOp,
@@ -219,7 +216,7 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
             MetaUnOp::Ref => {
                 match &expr.kind {
-                    MetaExprKind::Var(id, _span) => Ok(self.get_variable(id.clone())?.ptr.into()),
+                    MetaExprKind::Var(id, _span) => Ok(self.get_variable(id)?.ptr.into()),
 
                     _ => Err(self
                         .make_span_error("reference requires a variable".to_string(), expr.span)),
@@ -268,7 +265,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
     pub fn lower_call(
         &self,
-        target: SymbolId,
+        target: &str,
         args: &[MetaArg],
         span: &JunoSpan,
     ) -> Result<Option<BasicValueEnum<'ctx>>, LLVMError> {
@@ -290,6 +287,7 @@ impl<'ctx> LLVMBackend<'ctx> {
             inkwell::values::ValueKind::Instruction(_) => Ok(None),
         }
     }
+
     fn lower_normal_call(
         &self,
         function: FunctionValue<'ctx>,
@@ -321,6 +319,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(llvm_args)
     }
+
     fn lower_variadic_call(
         &self,
         function: FunctionValue<'ctx>,
@@ -355,6 +354,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(llvm_args)
     }
+
     fn lower_binary(
         &self,
         op: &MetaBinOp,
@@ -405,10 +405,10 @@ impl<'ctx> LLVMBackend<'ctx> {
             MetaBinOp::Div => self.builder.build_int_signed_div(lhs, rhs, "divtmp"),
             MetaBinOp::Mod => self.builder.build_int_signed_rem(lhs, rhs, "modtmp"),
             MetaBinOp::BitAnd => self.builder.build_and(lhs, rhs, "bitandtmp"),
-            MetaBinOp::BitOr => self.builder.build_or(lhs, rhs, "bitandtmp"),
-            MetaBinOp::BitXOR => self.builder.build_xor(lhs, rhs, "bitandtmp"),
-            MetaBinOp::BitSHL => self.builder.build_left_shift(lhs, rhs, "bitandtmp"),
-            MetaBinOp::BitSHR => self.builder.build_right_shift(lhs, rhs, true, "bitandtmp"),
+            MetaBinOp::BitOr => self.builder.build_or(lhs, rhs, "bitortmp"),
+            MetaBinOp::BitXOR => self.builder.build_xor(lhs, rhs, "bitxortmp"),
+            MetaBinOp::BitSHL => self.builder.build_left_shift(lhs, rhs, "shltmp"),
+            MetaBinOp::BitSHR => self.builder.build_right_shift(lhs, rhs, true, "shrtmp"),
 
             MetaBinOp::Eq => {
                 self.builder

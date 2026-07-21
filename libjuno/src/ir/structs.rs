@@ -1,4 +1,4 @@
-use inkwell::types::{BasicTypeEnum, StructType};
+use inkwell::types::{StructType};
 
 use super::*;
 use crate::{ast::JunoSpan, metair::*};
@@ -9,7 +9,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         s: &MetaStruct,
         _span: &JunoSpan,
     ) -> Result<StructType<'ctx>, LLVMError> {
-        let mut fields = Vec::<BasicTypeEnum<'ctx>>::new();
+        let mut fields = Vec::with_capacity(s.fields.len());
 
         for field in &s.fields {
             fields.push(self.lower_type(&field.ty, &field.span)?);
@@ -20,9 +20,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
     pub fn lower_struct(&mut self, s: &MetaStruct, span: &JunoSpan) -> Result<(), LLVMError> {
         let ty = self.struct_type(s, span)?;
-
         self.add_struct(s.name.clone(), &ty)?;
-
         Ok(())
     }
 
@@ -31,18 +29,15 @@ impl<'ctx> LLVMBackend<'ctx> {
         Ok(())
     }
 
-    pub fn get_struct(&self, target: SymbolId) -> Result<StructType<'ctx>, LLVMError> {
-        let mut len = 0;
-        let _ = target.split(".").inspect(|_| len += 1);
-
-        if len != 1 {
+    pub fn get_struct(&self, target: &str) -> Result<StructType<'ctx>, LLVMError> {
+        if target.split('.').count() != 1 {
             return Err(LLVMError::Message(
                 "qualified struct lookup is not implemented".into(),
             ));
         }
 
         self.structs
-            .get(&target)
+            .get(target)
             .copied()
             .ok_or_else(|| LLVMError::Message(format!("unknown struct '{}'", target)))
     }

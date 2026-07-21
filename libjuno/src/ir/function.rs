@@ -26,7 +26,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
 
     fn declare_function(&mut self, function: &MetaFunction) -> Result<(), LLVMError> {
-        let mut params = Vec::<BasicMetadataTypeEnum>::new();
+        let mut params = Vec::<BasicMetadataTypeEnum>::with_capacity(function.params.len());
 
         for param in &function.params {
             params.push(self.lower_type(&param.ty, &param.span)?.into());
@@ -81,7 +81,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 .build_store(ptr, llvm_param)
                 .map_err(|e| self.make_span_error(e.to_string(), *span))?;
 
-            self.insert_variable(param.name.clone(), ptr, llvm_param.get_type());
+            self.insert_variable(&param.name, ptr, llvm_param.get_type());
         }
 
         for stmt in &function.body {
@@ -118,6 +118,7 @@ impl<'ctx> LLVMBackend<'ctx> {
 
         Ok(())
     }
+
     pub fn add_function(
         &mut self,
         id: String,
@@ -127,12 +128,10 @@ impl<'ctx> LLVMBackend<'ctx> {
         Ok(())
     }
 
-    pub fn get_function(&self, target: String) -> Result<FunctionValue<'ctx>, LLVMError> {
-        let id = target;
-
-        if let Some(f) = self.functions.get(&id) {
+    pub fn get_function(&self, target: &str) -> Result<FunctionValue<'ctx>, LLVMError> {
+        if let Some(f) = self.functions.get(target) {
             return Ok(*f);
         }
-        Err(LLVMError::Message(format!("unknown function '{}'", id)))
+        Err(LLVMError::Message(format!("unknown function '{}'", target)))
     }
 }

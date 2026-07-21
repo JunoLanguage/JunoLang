@@ -1,10 +1,8 @@
 use crate::ast::JunoSpan;
 use crate::metair::*;
-use inkwell::types::BasicType;
+use inkwell::types::{BasicMetadataTypeEnum, BasicType};
 
 use super::*;
-
-use inkwell::types::BasicMetadataTypeEnum;
 
 impl<'ctx> LLVMBackend<'ctx> {
     pub fn lower_declaration(
@@ -12,7 +10,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         declaration: &MetaDeclaration,
         span: &JunoSpan,
     ) -> Result<(), LLVMError> {
-        let mut params = Vec::<BasicMetadataTypeEnum>::new();
+        let mut params = Vec::<BasicMetadataTypeEnum>::with_capacity(declaration.params.len());
 
         for param in &declaration.params {
             params.push(self.lower_type(&param.ty, &param.span)?.into());
@@ -27,9 +25,9 @@ impl<'ctx> LLVMBackend<'ctx> {
         let llvm_declaration = self
             .module
             .add_function(declaration.name.as_str(), fn_type, None);
+
         self.add_function(declaration.name.clone(), &llvm_declaration)?;
-        self.functions
-            .insert(declaration.name.clone(), llvm_declaration);
+
         Ok(())
     }
 }

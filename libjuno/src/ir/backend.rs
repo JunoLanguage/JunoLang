@@ -82,13 +82,13 @@ impl<'ctx> LLVMBackend<'ctx> {
         self.module.print_to_stderr();
     }
 
-    pub fn compile(&mut self) -> Result<Module<'ctx>, LLVMError> {
+    pub fn compile(mut self) -> Result<Module<'ctx>, LLVMError> {
         self.lower_program()?;
         self.module
             .verify()
             .map_err(|e| LLVMError::Message(e.to_string()))?;
 
-        Ok(self.module.clone())
+        Ok(self.module)
     }
 }
 
@@ -109,7 +109,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     }
     pub fn insert_variable(
         &mut self,
-        id: SymbolId,
+        id: &str,
         ptr: PointerValue<'ctx>,
         ty: BasicTypeEnum<'ctx>,
     ) {
@@ -118,14 +118,14 @@ impl<'ctx> LLVMBackend<'ctx> {
 
     pub fn get_variable(
         &self,
-        id: SymbolId,
+        id: &str,
     ) -> Result<&crate::ir::scope::Variable<'ctx>, LLVMError> {
         let mut parts = id.split('.');
 
         let var_name = parts.next().unwrap();
 
         for scope in self.scopes.iter().rev() {
-            if let Some(var) = scope.get(var_name.to_string()) {
+            if let Some(var) = scope.get(var_name) {
                 return Ok(var);
             }
         }
