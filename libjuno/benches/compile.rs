@@ -43,7 +43,7 @@ fn compile_dummy(dummy: &str) -> Result<()> {
 }
 fn compile_benchmark(c: &mut Criterion) {
     c.bench_function("compile dummy0", |b| b.iter(|| compile_dummy(DUMMY0)));
-    c.bench_function("compile dummy0", |b| b.iter(|| compile_dummy(DUMMY0)));
+    c.bench_function("compile dummy1", |b| b.iter(|| compile_dummy(DUMMY1)));
 }
 
 criterion_group!(benches, compile_benchmark);

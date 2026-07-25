@@ -19,6 +19,7 @@ keywords.workspace = true
 categories.workspace = true
 [dependencies]
 clap.workspace = true
+anyhow.workspace = true
 [dependencies.libjuno]
 workspace = true
 features = ["compiler"]

@@ -146,11 +146,9 @@ impl<'a> MetaIRGen<'a> {
                         } else if let Some(builtin) = builtin_registry::get_builtin(&target) {
                             match &builtin.declare {
                                 builtin_registry::BuiltinEnum::Function { return_type, .. } => {
-                                    let parsed: Vec<Pair<Rule>> =
+                                    let parsed =
                                         JunoParser::parse(Rule::type_, return_type)
-                                            .unwrap()
-                                            .into_iter()
-                                            .collect();
+                                            .unwrap();
 
                                     let parser = JunoASTParser::new("_".into());
 

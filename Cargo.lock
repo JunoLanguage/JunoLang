@@ -705,6 +705,7 @@ dependencies = [
 name = "junocc"
 version = "0.1.23"
 dependencies = [
+ "anyhow",
  "clap",
  "dhat",
  "libjuno",
