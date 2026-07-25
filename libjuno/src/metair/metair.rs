@@ -20,7 +20,7 @@ pub type TypeId = String;
 pub struct MetaStruct {
     pub span: JunoSpan,
     pub name: SymbolId,
-    pub fields: Vec<MetaField>,
+    pub fields: Box<[MetaField]>,
 }
 
 #[derive(Debug, Clone)]
@@ -36,9 +36,9 @@ pub struct MetaProgram {
     pub functions: HashMap<SymbolId, MetaFunction>,
     pub declarations: HashMap<SymbolId, MetaDeclaration>,
     pub structs: HashMap<SymbolId, MetaStruct>,
-    pub struct_fields: HashMap<SymbolId, Vec<String>>,
-    pub string_table: Vec<String>,
-    pub symbol_table: Vec<String>,
+    pub struct_fields: HashMap<SymbolId, Box<[String]>>,
+    pub string_table: Box<[String]>,
+    pub symbol_table: Box<[String]>,
 }
 
 // =======================
@@ -50,16 +50,16 @@ pub struct MetaFunction {
     pub span: JunoSpan,
     pub name: SymbolId,
     pub locals: HashMap<SymbolId, MetaType>,
-    pub params: Vec<MetaParam>,
+    pub params: Box<[MetaParam]>,
     pub ret: Option<MetaType>,
-    pub body: Vec<MetaStmt>,
+    pub body: Box<[MetaStmt]>,
 }
 
 #[derive(Debug, Clone)]
 pub struct MetaDeclaration {
     pub span: JunoSpan,
     pub name: SymbolId,
-    pub params: Vec<MetaParam>,
+    pub params: Box<[MetaParam]>,
     pub ret: Option<MetaType>,
 }
 
@@ -100,14 +100,14 @@ pub enum MetaStmt {
     If {
         span: JunoSpan,
         cond: MetaExpr,
-        then_body: Vec<MetaStmt>,
-        else_ifs: Vec<(MetaExpr, Vec<MetaStmt>)>,
-        else_body: Option<Vec<MetaStmt>>,
+        then_body: Box<[MetaStmt]>,
+        else_ifs: Box<[(MetaExpr, Box<[MetaStmt]>)]>,
+        else_body: Option<Box<[MetaStmt]>>,
     },
 
     Loop {
         span: JunoSpan,
-        body: Vec<MetaStmt>,
+        body: Box<[MetaStmt]>,
     },
 }
 impl MetaStmt {
@@ -144,7 +144,7 @@ pub enum MetaExprKind {
     Call {
         span: JunoSpan,
         target: SymbolId,
-        args: Vec<MetaArg>,
+        args: Box<[MetaArg]>,
     },
 
     Binary {
@@ -160,14 +160,14 @@ pub enum MetaExprKind {
         expr: Box<MetaExpr>,
     },
 
-    Array(Vec<MetaExpr>, JunoSpan),
+    Array(Box<[MetaExpr]>, JunoSpan),
 
     Void(JunoSpan),
 
     StructInit {
         span: JunoSpan,
         name: SymbolId,
-        fields: Vec<(u32, MetaExpr)>,
+        fields: Box<[(u32, MetaExpr)]>,
     },
 }
 #[derive(Debug, Clone)]

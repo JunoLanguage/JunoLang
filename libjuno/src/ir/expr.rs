@@ -4,7 +4,6 @@
 
 use std::collections::HashMap;
 
-use anyhow::anyhow;
 use inkwell::{
     types::{AsTypeRef, BasicTypeEnum},
     values::{ArrayValue, AsValueRef, BasicMetadataValueEnum, BasicValueEnum, FunctionValue},

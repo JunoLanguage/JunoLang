@@ -39,7 +39,7 @@ pub struct IfStmt {
     pub span: JunoSpan,
     pub condition: Expr,
     pub then_block: Block,
-    pub else_ifs: Vec<(Expr, Block)>,
+    pub else_ifs: Box<[(Expr, Block)]>,
     pub else_block: Option<Block>,
 }
 

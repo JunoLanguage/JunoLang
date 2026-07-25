@@ -19,7 +19,7 @@ impl ParserState {
 
         Ok(Block {
             span: self.make_span(span),
-            stmts,
+            stmts: stmts.into_boxed_slice(),
         })
     }
 
@@ -130,7 +130,7 @@ impl ParserState {
             span,
             condition,
             then_block,
-            else_ifs,
+            else_ifs: else_ifs.into_boxed_slice(),
             else_block,
         }))
     }

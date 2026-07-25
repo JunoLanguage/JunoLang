@@ -56,9 +56,9 @@ pub fn make_backend(program: &'static MetaProgram) -> (LLVMBackend<'static>, &'s
 pub fn dummy_meta_function() -> MetaFunction {
     MetaFunction {
         name: "dummy".into(),
-        params: Vec::new(),
+        params: Box::new([]),
         ret: Some(MetaType::Named("void".into(), dummy_span())),
-        body: Vec::new(),
+        body: Box::new([]),
         span: dummy_span(),
         locals: HashMap::new(),
     }

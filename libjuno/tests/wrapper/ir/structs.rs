@@ -14,16 +14,16 @@ fn lower_struct_adds_to_backend() {
         "Point".into(),
         MetaStruct {
             name: "Point".into(),
-            fields: vec![MetaField {
+            fields: Box::new([MetaField {
                 ty: MetaType::Named("i32".into(), dummy_span()),
                 name: "dummy".to_string(),
                 span: dummy_span(),
                 index: 0,
-            }],
+            }]),
             span: dummy_span(),
         },
     );
-    prog.struct_fields.insert("Point".into(), vec!["x".into()]);
+    prog.struct_fields.insert("Point".into(), Box::new(["x".into()]));
     let prog = Box::leak(Box::new(prog));
     let (mut backend, _ctx) = make_backend(prog);
 

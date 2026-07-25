@@ -31,7 +31,7 @@ impl ParserState {
 
         Ok(Program {
             span: self.make_span(span),
-            items,
+            items: items.into_boxed_slice(),
         })
     }
 
@@ -100,7 +100,7 @@ impl ParserState {
                         span: self.make_span(span),
                         name,
                         raw_name,
-                        params,
+                        params: params.into_boxed_slice(),
                         return_type,
                         body,
                     });
@@ -128,7 +128,7 @@ impl ParserState {
                     return Ok(Declaration {
                         span: self.make_span(span),
                         name,
-                        params,
+                        params: params.into_boxed_slice(),
                         return_type: Some(self.parse_type(p)?),
                     });
                 }
@@ -190,7 +190,7 @@ impl ParserState {
         Ok(StructDef {
             span: self.make_span(span),
             name,
-            fields,
+            fields: fields.into_boxed_slice(),
         })
     }
 }

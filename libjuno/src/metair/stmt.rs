@@ -58,18 +58,18 @@ impl<'a> MetaIRGen<'a> {
                 span: stmt.span,
                 cond: self.lower_expr(&stmt.condition),
 
-                then_body: self.lower_block(&stmt.then_block).0,
+                then_body: self.lower_block(&stmt.then_block).0.into_boxed_slice(),
 
                 else_ifs: stmt
                     .else_ifs
                     .iter()
-                    .map(|(cond, body)| (self.lower_expr(cond), self.lower_block(body).0))
+                    .map(|(cond, body)| (self.lower_expr(cond), self.lower_block(body).0.into_boxed_slice()))
                     .collect(),
 
                 else_body: stmt
                     .else_block
                     .as_ref()
-                    .map(|body| self.lower_block(body).0),
+                    .map(|body| self.lower_block(body).0.into_boxed_slice()),
             },
 
             Stmt::While(stmt) => {
@@ -77,7 +77,7 @@ impl<'a> MetaIRGen<'a> {
 
                 MetaStmt::Loop {
                     span: stmt.span,
-                    body: vec![MetaStmt::If {
+                    body: Box::from([MetaStmt::If {
                         span: cond.span,
 
                         cond: MetaExpr {
@@ -92,18 +92,18 @@ impl<'a> MetaIRGen<'a> {
                             ty: MetaType::Named("bool".to_string(), cond.span),
                         },
 
-                        then_body: vec![MetaStmt::Break(stmt.span)],
+                        then_body: Box::from([MetaStmt::Break(stmt.span)]),
 
-                        else_ifs: Vec::new(),
+                        else_ifs: Box::new([]),
 
-                        else_body: Some(self.lower_block(&stmt.body).0),
-                    }],
+                        else_body: Some(self.lower_block(&stmt.body).0.into_boxed_slice()),
+                    }]),
                 }
             }
 
             Stmt::Loop(body) => MetaStmt::Loop {
                 span: body.span,
-                body: self.lower_block(body).0,
+                body: self.lower_block(body).0.into_boxed_slice(),
             },
 
             Stmt::For(stmt) => {
