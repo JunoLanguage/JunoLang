@@ -2,7 +2,7 @@
 //License, v. 2.0. If a copy of the MPL was not distributed with this
 //file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use pest::{Parser, iterators::Pair};
+use pest::Parser;
 
 use crate::{
     JunoParser, MetaArg, MetaConst, MetaExpr, MetaExprKind, MetaIRGen, MetaType, Rule,
@@ -85,7 +85,7 @@ impl<'a> MetaIRGen<'a> {
 
                 MetaExpr {
                     span,
-                    kind: MetaExprKind::Array(lowered, span),
+                    kind: MetaExprKind::Array(lowered.into_boxed_slice(), span),
                     ty: MetaType::Array {
                         span,
                         elem: Box::new(elem_ty),
@@ -111,7 +111,11 @@ impl<'a> MetaIRGen<'a> {
 
                 MetaExpr {
                     span,
-                    kind: MetaExprKind::StructInit { name, fields, span },
+                    kind: MetaExprKind::StructInit {
+                        name,
+                        fields: fields.into_boxed_slice(),
+                        span,
+                    },
                     ty,
                 }
             }
@@ -146,11 +150,8 @@ impl<'a> MetaIRGen<'a> {
                         } else if let Some(builtin) = builtin_registry::get_builtin(&target) {
                             match &builtin.declare {
                                 builtin_registry::BuiltinEnum::Function { return_type, .. } => {
-                                    let parsed: Vec<Pair<Rule>> =
-                                        JunoParser::parse(Rule::type_, return_type)
-                                            .unwrap()
-                                            .into_iter()
-                                            .collect();
+                                    let parsed =
+                                        JunoParser::parse(Rule::type_, return_type).unwrap();
 
                                     let parser = JunoASTParser::new("_".into());
 
@@ -169,7 +170,11 @@ impl<'a> MetaIRGen<'a> {
 
                 MetaExpr {
                     span,
-                    kind: MetaExprKind::Call { target, args, span },
+                    kind: MetaExprKind::Call {
+                        target,
+                        args: args.into_boxed_slice(),
+                        span,
+                    },
                     ty,
                 }
             }

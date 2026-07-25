@@ -3,3 +3,6 @@
 /.direnv
 *.bc
 *.o
+/flamegraph.svg
+/perf.data*
+/dhat-heap.json

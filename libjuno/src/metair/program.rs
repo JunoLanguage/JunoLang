@@ -50,7 +50,7 @@ impl<'a> MetaIRGen<'a> {
                     ordered[*index as usize] = name.clone();
                 }
 
-                (struct_id.clone(), ordered)
+                (struct_id.clone(), ordered.into_boxed_slice())
             })
             .collect();
 
@@ -59,8 +59,8 @@ impl<'a> MetaIRGen<'a> {
             functions,
             structs: self.structs.clone(),
             declarations,
-            string_table: self.string_list.clone(),
-            symbol_table: self.symbol_list.clone(),
+            string_table: self.string_list.clone().into_boxed_slice(),
+            symbol_table: self.symbol_list.clone().into_boxed_slice(),
             struct_fields,
         }
     }
@@ -98,7 +98,7 @@ impl<'a> MetaIRGen<'a> {
             MetaDeclaration {
                 span: function.span,
                 name: name.clone(),
-                params: params.clone(),
+                params: params.clone().into_boxed_slice(),
                 ret: ret.clone(),
             },
         );
@@ -111,9 +111,9 @@ impl<'a> MetaIRGen<'a> {
             span: function.span,
             name,
             locals,
-            params,
+            params: params.into_boxed_slice(),
             ret,
-            body,
+            body: body.into_boxed_slice(),
         }
     }
 
@@ -149,7 +149,7 @@ impl<'a> MetaIRGen<'a> {
         let meta = MetaDeclaration {
             span: declaration.span,
             name: name.clone(),
-            params,
+            params: params.into_boxed_slice(),
             ret,
         };
 

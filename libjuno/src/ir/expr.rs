@@ -148,13 +148,15 @@ impl<'ctx> LLVMBackend<'ctx> {
         locals: &HashMap<SymbolId, MetaType>,
         span: &JunoSpan,
     ) -> Result<BasicValueEnum<'ctx>, LLVMError> {
-        let parts: Vec<&str> = id.split('.').collect();
-
-        let var = self.get_variable(parts[0])?;
-        let struct_ty = locals.get(parts[0]);
+        let mut parts = id.split('.');
+        let first_part = parts
+            .next()
+            .ok_or(self.make_span_error("".to_string(), *span))?;
+        let var = self.get_variable(first_part)?;
+        let struct_ty = locals.get(first_part);
         let mut ptr = var.ptr;
         let mut ty = var.ty;
-        for field in &parts[1..] {
+        for field in parts {
             let struct_name = match struct_ty {
                 Some(t) => self.get_named_from_type(t),
                 None => {

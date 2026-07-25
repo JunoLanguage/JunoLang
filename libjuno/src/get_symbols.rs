@@ -12,17 +12,17 @@ use crate::*;
 pub enum SymbolDecl {
     Function {
         name: String,
-        params: Vec<MetaParam>,
+        params: Box<[MetaParam]>,
         ret: Option<MetaType>,
     },
     Struct {
         name: String,
-        fields: Vec<MetaField>,
+        fields: Box<[MetaField]>,
     },
 }
 #[derive(Clone, Debug)]
 pub struct SymbolDeclTable {
-    pub symbols: Vec<SymbolDecl>,
+    pub symbols: Box<[SymbolDecl]>,
     pub program: MetaProgram,
 }
 
@@ -76,7 +76,7 @@ pub fn get_symbols(input: String, namespace: String, filename: Option<String>) -
         });
     }
     SymbolDeclTable {
-        symbols,
+        symbols: symbols.into_boxed_slice(),
         program: metair.clone(),
     }
 }

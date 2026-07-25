@@ -62,7 +62,7 @@ fn lower_type_named_struct_found() {
         "Point".into(),
         MetaStruct {
             name: "Point".into(),
-            fields: Vec::new(),
+            fields: Box::new([]),
             span: dummy_span(),
         },
     );

@@ -1,0 +1,80 @@
+fn main() -> i32 {
+    printf("=== strings ===\n");
+
+    let s: &u8 = malloc(64);
+
+    strcpy(s, "Hello");
+    printf("strcpy: %s\n", s);
+
+    strcat(s, " World");
+    printf("strcat: %s\n", s);
+
+    printf("strlen: %d\n", strlen(s));
+
+    if (strcmp(s, "Hello World") == 0) {
+        puts("strcmp works");
+    }
+
+    if (strncmp(s, "Hello", 5) == 0) {
+        puts("strncmp works");
+    }
+
+    let p: &u8 = strchr(s, 'W');
+
+    if (*p != 0) {
+        printf("strchr: %s\n", p);
+    }
+
+    let q: &u8 = strstr(s, "World");
+
+    if (*q != 0) {
+        printf("strstr: %s\n", q);
+    }
+
+    printf("\n=== memory ===\n");
+
+    memset(s, '-', 5);
+    //s[5] = '\0';
+
+    printf("memset: %s\n", s);
+
+    strcpy(s, "ABCDE");
+
+    let copy: &u8 = malloc(64);
+
+    memcpy(copy, s, 6);
+
+    printf("memcpy: %s\n", copy);
+
+    if (memcmp(s, copy, 6) == 0) {
+        puts("memcmp works");
+    }
+
+    free(copy);
+
+    printf("\n=== character ===\n");
+
+    printf("isdigit('7') = %d\n", isdigit('7'));
+    printf("isalpha('A') = %d\n", isalpha('A'));
+    printf("isalnum('9') = %d\n", isalnum('9'));
+    printf("isspace(' ') = %d\n", isspace(' '));
+
+    printf("tolower('X') = %c\n", tolower('X'));
+    printf("toupper('q') = %c\n", toupper('q'));
+
+    printf("\n=== input ===\n");
+
+    printf("Type one character: ");
+
+    let c: i32 = getchar();
+
+    printf("\nYou typed: ");
+    putchar(c);
+    putchar('\n');
+
+    free(s);
+
+    printf("\n=== done ===\n");
+
+    return 0;
+}

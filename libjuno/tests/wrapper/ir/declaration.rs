@@ -13,7 +13,7 @@ fn lower_declare_adds_external_function() {
         "add".into(),
         MetaDeclaration {
             name: "add".into(),
-            params: vec![
+            params: Box::new([
                 libjuno::metair::MetaParam {
                     name: "a".into(),
                     ty: MetaType::Named("i32".into(), dummy_span()),
@@ -24,7 +24,7 @@ fn lower_declare_adds_external_function() {
                     ty: MetaType::Named("i32".into(), dummy_span()),
                     span: dummy_span(),
                 },
-            ],
+            ]),
             ret: Some(MetaType::Named("i32".into(), dummy_span())),
             span: dummy_span(),
         },

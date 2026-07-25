@@ -9,7 +9,7 @@ pub type FilePath = String;
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Program {
     pub span: JunoSpan,
-    pub items: Vec<Item>,
+    pub items: Box<[Item]>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -31,7 +31,7 @@ pub struct Function {
     pub span: JunoSpan,
     pub name: String,
     pub raw_name: String,
-    pub params: Vec<Param>,
+    pub params: Box<[Param]>,
     pub return_type: Option<Type>,
     pub body: Block,
 }
@@ -40,7 +40,7 @@ pub struct Function {
 pub struct Declaration {
     pub span: JunoSpan,
     pub name: String,
-    pub params: Vec<Param>,
+    pub params: Box<[Param]>,
     pub return_type: Option<Type>,
 }
 
@@ -55,7 +55,7 @@ pub struct Param {
 pub struct StructDef {
     pub span: JunoSpan,
     pub name: String,
-    pub fields: Vec<StructField>,
+    pub fields: Box<[StructField]>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

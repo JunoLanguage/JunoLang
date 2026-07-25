@@ -50,7 +50,7 @@ pub enum Type {
     Generic {
         span: JunoSpan,
         base: String,
-        args: Vec<Type>,
+        args: Box<[Type]>,
     },
 }
 

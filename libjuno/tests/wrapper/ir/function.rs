@@ -15,16 +15,16 @@ fn lower_simple_return_function() {
         "main".into(),
         MetaFunction {
             name: "main".into(),
-            params: Vec::new(),
+            params: Box::new([]),
             ret: Some(MetaType::Named("i32".into(), dummy_span())),
-            body: vec![MetaStmt::Return(
+            body: Box::new([MetaStmt::Return(
                 Some(MetaExpr {
                     kind: MetaExprKind::Const(MetaConst::Int(0, dummy_span()), dummy_span()),
                     ty: MetaType::Named("i32".into(), dummy_span()),
                     span: dummy_span(),
                 }),
                 dummy_span(),
-            )],
+            )]),
             span: dummy_span(),
             locals: HashMap::new(),
         },

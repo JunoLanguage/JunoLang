@@ -14,6 +14,10 @@ use libjuno::{compile_file, inkwell::module::Module};
 
 mod optimizer;
 
+#[cfg(feature = "dhat-heap")]
+#[global_allocator]
+static ALLOC: dhat::Alloc = dhat::Alloc;
+
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
 struct Cli {
@@ -34,15 +38,16 @@ struct JunoObject<'a> {
     filename: String,
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
+    #[cfg(feature = "dhat-heap")]
+    let _profiler = dhat::Profiler::new_heap();
     let args = Cli::parse();
     let output = args.output.unwrap_or("out.junoc".to_string());
     let linker = std::env::var("JUNO_LD").unwrap_or("clang".to_string());
-    let _out_ext: Vec<&str> = output.split(".").collect();
-    let mut out_ext = *_out_ext.last().unwrap();
-    if _out_ext.len() < 2 {
-        out_ext = "elf";
-    }
+    let out_ext = match Path::new(&output).extension() {
+        Some(s) => s.to_str().unwrap(),
+        None => "elf",
+    };
     let mut objects: Vec<JunoObject> = vec![];
     let target_machine = get_target_machine();
     for file in args.files {
@@ -73,8 +78,12 @@ fn main() {
         }
     }
     match out_ext {
-        "junoc" => {}
-        "junobj" => {}
+        "junoc" => {
+            todo!()
+        }
+        "junobj" => {
+            todo!()
+        }
         "elf" => {
             let mut object_paths: Vec<String> = vec![];
             for o in &objects {
@@ -90,10 +99,15 @@ fn main() {
             object_paths.extend(linker_args);
             let _status = Command::new(&linker).args(&object_paths).status().unwrap();
         }
-        "lib" => {}
-        "bc" => {}
+        "lib" => {
+            todo!()
+        }
+        "bc" => {
+            todo!()
+        }
         _ => panic!("Unknown output filetyp: {}", out_ext),
     }
+    Ok(())
 }
 
 pub fn get_target_machine() -> TargetMachine {

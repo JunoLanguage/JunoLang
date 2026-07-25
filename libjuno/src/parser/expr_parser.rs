@@ -174,7 +174,11 @@ impl ParserState {
             }
         }
 
-        Ok(Expr::Call(Call { span, target, args }))
+        Ok(Expr::Call(Call {
+            span,
+            target,
+            args: args.into_boxed_slice(),
+        }))
     }
 
     fn parse_array(&self, pair: Pair<Rule>) -> anyhow::Result<Expr> {
@@ -185,7 +189,7 @@ impl ParserState {
             items.push(self.parse_expr(token)?);
         }
 
-        Ok(Expr::Array(items, span))
+        Ok(Expr::Array(items.into_boxed_slice(), span))
     }
 
     fn parse_struct_init(&self, pair: Pair<Rule>) -> anyhow::Result<Expr> {
@@ -214,7 +218,11 @@ impl ParserState {
             });
         }
 
-        Ok(Expr::StructInit(StructInit { span, name, fields }))
+        Ok(Expr::StructInit(StructInit {
+            span,
+            name,
+            fields: fields.into_boxed_slice(),
+        }))
     }
 
     fn parse_logical(&self, pair: Pair<Rule>) -> anyhow::Result<Expr> {

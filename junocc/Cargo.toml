@@ -19,6 +19,13 @@ keywords.workspace = true
 categories.workspace = true
 [dependencies]
 clap.workspace = true
+anyhow.workspace = true
 [dependencies.libjuno]
 workspace = true
 features = ["compiler"]
+[dependencies.dhat]
+version   = "0.3.3"
+optional = true
+
+[features]
+dhat-heap = ["dhat"]

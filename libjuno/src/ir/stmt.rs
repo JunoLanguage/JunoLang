@@ -27,7 +27,13 @@ impl<'ctx> LLVMBackend<'ctx> {
                 then_body,
                 else_ifs,
                 else_body,
-            } => self.lower_if(cond, then_body, else_ifs, else_body.as_ref(), span),
+            } => self.lower_if(
+                cond,
+                then_body.clone(),
+                else_ifs.clone(),
+                else_body.clone(),
+                span,
+            ),
 
             MetaStmt::Continue(span) => self.lower_continue(span),
 
@@ -147,9 +153,9 @@ impl<'ctx> LLVMBackend<'ctx> {
     fn lower_if(
         &mut self,
         cond: &MetaExpr,
-        then_body: &[MetaStmt],
-        else_ifs: &[(MetaExpr, Vec<MetaStmt>)],
-        else_body: Option<&Vec<MetaStmt>>,
+        then_body: Box<[MetaStmt]>,
+        else_ifs: Box<[(MetaExpr, Box<[MetaStmt]>)]>,
+        else_body: Option<Box<[MetaStmt]>>,
         span: &JunoSpan,
     ) -> Result<(), LLVMError> {
         let function = self.current_function();
@@ -169,7 +175,7 @@ impl<'ctx> LLVMBackend<'ctx> {
         self.push_scope();
 
         for stmt in then_body {
-            self.lower_stmt(stmt, stmt.span())?;
+            self.lower_stmt(&stmt, stmt.span())?;
 
             if self
                 .builder
@@ -203,7 +209,7 @@ impl<'ctx> LLVMBackend<'ctx> {
                 self.push_scope();
 
                 for stmt in body {
-                    self.lower_stmt(stmt, stmt.span())?;
+                    self.lower_stmt(&stmt, stmt.span())?;
 
                     if self
                         .builder
@@ -220,7 +226,7 @@ impl<'ctx> LLVMBackend<'ctx> {
             }
         } else {
             let (cond, body) = &else_ifs[0];
-            self.lower_if(cond, body, &else_ifs[1..], else_body, span)?;
+            self.lower_if(cond, body.clone(), (&else_ifs[1..]).into(), else_body, span)?;
         }
 
         if self

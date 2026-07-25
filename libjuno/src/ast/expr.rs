@@ -13,7 +13,7 @@ pub enum Expr {
     Char(char, JunoSpan),
     Var(String, JunoSpan),
     Call(Call),
-    Array(Vec<Expr>, JunoSpan),
+    Array(Box<[Expr]>, JunoSpan),
     StructInit(StructInit),
     Binary(BinaryExpr),
     Unary(UnaryExpr),
@@ -23,7 +23,7 @@ pub enum Expr {
 pub struct Call {
     pub span: JunoSpan,
     pub target: String,
-    pub args: Vec<Arg>,
+    pub args: Box<[Arg]>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -51,7 +51,7 @@ pub struct UnaryExpr {
 pub struct StructInit {
     pub span: JunoSpan,
     pub name: String,
-    pub fields: Vec<StructInitField>,
+    pub fields: Box<[StructInitField]>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
