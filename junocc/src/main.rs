@@ -14,6 +14,10 @@ use libjuno::{compile_file, inkwell::module::Module};
 
 mod optimizer;
 
+#[cfg(feature = "dhat-heap")]
+#[global_allocator]
+static ALLOC: dhat::Alloc = dhat::Alloc;
+
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
 struct Cli {
@@ -35,6 +39,8 @@ struct JunoObject<'a> {
 }
 
 fn main() {
+    #[cfg(feature = "dhat-heap")]
+    let _profiler = dhat::Profiler::new_heap();
     let args = Cli::parse();
     let output = args.output.unwrap_or("out.junoc".to_string());
     let linker = std::env::var("JUNO_LD").unwrap_or("clang".to_string());

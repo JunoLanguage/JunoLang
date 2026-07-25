@@ -63,6 +63,7 @@
               rustPlatform.rustLibSrc
               libffi
               libxml2
+              perf
             ]
             ++ buildInputs
             ++ nativeBuildInputs;
