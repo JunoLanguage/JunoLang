@@ -27,7 +27,13 @@ impl<'ctx> LLVMBackend<'ctx> {
                 then_body,
                 else_ifs,
                 else_body,
-            } => self.lower_if(cond, then_body.clone(), else_ifs.clone(), else_body.clone(), span),
+            } => self.lower_if(
+                cond,
+                then_body.clone(),
+                else_ifs.clone(),
+                else_body.clone(),
+                span,
+            ),
 
             MetaStmt::Continue(span) => self.lower_continue(span),
 

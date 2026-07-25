@@ -10,7 +10,6 @@ const DUMMY_NAMESPACE: &str = black_box("DUMMY");
 const DUMMY_PATH: &str = black_box("dummy.juno");
 
 fn compile_dummy(dummy: &str) -> Result<()> {
-    
     let pairs = match JunoParser::parse(Rule::program, DUMMY0) {
         Ok(pairs) => pairs,
         Err(e) => {
@@ -38,7 +37,8 @@ fn compile_dummy(dummy: &str) -> Result<()> {
         "main",
         dummy.into(),
         DUMMY_PATH.to_string(),
-    ).compile()?;
+    )
+    .compile()?;
     Ok(())
 }
 fn compile_benchmark(c: &mut Criterion) {

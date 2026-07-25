@@ -149,7 +149,9 @@ impl<'ctx> LLVMBackend<'ctx> {
         span: &JunoSpan,
     ) -> Result<BasicValueEnum<'ctx>, LLVMError> {
         let mut parts = id.split('.');
-        let first_part = parts.next().ok_or(self.make_span_error("".to_string(), *span))?;
+        let first_part = parts
+            .next()
+            .ok_or(self.make_span_error("".to_string(), *span))?;
         let var = self.get_variable(first_part)?;
         let struct_ty = locals.get(first_part);
         let mut ptr = var.ptr;

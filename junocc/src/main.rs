@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
     let linker = std::env::var("JUNO_LD").unwrap_or("clang".to_string());
     let out_ext = match Path::new(&output).extension() {
         Some(s) => s.to_str().unwrap(),
-        None => "elf"
+        None => "elf",
     };
     let mut objects: Vec<JunoObject> = vec![];
     let target_machine = get_target_machine();
@@ -78,8 +78,12 @@ fn main() -> anyhow::Result<()> {
         }
     }
     match out_ext {
-        "junoc" => {todo!()}
-        "junobj" => {todo!()}
+        "junoc" => {
+            todo!()
+        }
+        "junobj" => {
+            todo!()
+        }
         "elf" => {
             let mut object_paths: Vec<String> = vec![];
             for o in &objects {
@@ -95,8 +99,12 @@ fn main() -> anyhow::Result<()> {
             object_paths.extend(linker_args);
             let _status = Command::new(&linker).args(&object_paths).status().unwrap();
         }
-        "lib" => {todo!()}
-        "bc" => {todo!()}
+        "lib" => {
+            todo!()
+        }
+        "bc" => {
+            todo!()
+        }
         _ => panic!("Unknown output filetyp: {}", out_ext),
     }
     Ok(())

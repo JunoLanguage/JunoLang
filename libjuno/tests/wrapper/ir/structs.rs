@@ -23,7 +23,8 @@ fn lower_struct_adds_to_backend() {
             span: dummy_span(),
         },
     );
-    prog.struct_fields.insert("Point".into(), Box::new(["x".into()]));
+    prog.struct_fields
+        .insert("Point".into(), Box::new(["x".into()]));
     let prog = Box::leak(Box::new(prog));
     let (mut backend, _ctx) = make_backend(prog);
 

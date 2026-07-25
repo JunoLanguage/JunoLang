@@ -174,7 +174,11 @@ impl ParserState {
             }
         }
 
-        Ok(Expr::Call(Call { span, target, args: args.into_boxed_slice() }))
+        Ok(Expr::Call(Call {
+            span,
+            target,
+            args: args.into_boxed_slice(),
+        }))
     }
 
     fn parse_array(&self, pair: Pair<Rule>) -> anyhow::Result<Expr> {
@@ -214,7 +218,11 @@ impl ParserState {
             });
         }
 
-        Ok(Expr::StructInit(StructInit { span, name, fields: fields.into_boxed_slice() }))
+        Ok(Expr::StructInit(StructInit {
+            span,
+            name,
+            fields: fields.into_boxed_slice(),
+        }))
     }
 
     fn parse_logical(&self, pair: Pair<Rule>) -> anyhow::Result<Expr> {

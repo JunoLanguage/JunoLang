@@ -63,7 +63,12 @@ impl<'a> MetaIRGen<'a> {
                 else_ifs: stmt
                     .else_ifs
                     .iter()
-                    .map(|(cond, body)| (self.lower_expr(cond), self.lower_block(body).0.into_boxed_slice()))
+                    .map(|(cond, body)| {
+                        (
+                            self.lower_expr(cond),
+                            self.lower_block(body).0.into_boxed_slice(),
+                        )
+                    })
                     .collect(),
 
                 else_body: stmt

@@ -111,7 +111,11 @@ impl<'a> MetaIRGen<'a> {
 
                 MetaExpr {
                     span,
-                    kind: MetaExprKind::StructInit { name, fields: fields.into_boxed_slice(), span },
+                    kind: MetaExprKind::StructInit {
+                        name,
+                        fields: fields.into_boxed_slice(),
+                        span,
+                    },
                     ty,
                 }
             }
@@ -147,8 +151,7 @@ impl<'a> MetaIRGen<'a> {
                             match &builtin.declare {
                                 builtin_registry::BuiltinEnum::Function { return_type, .. } => {
                                     let parsed =
-                                        JunoParser::parse(Rule::type_, return_type)
-                                            .unwrap();
+                                        JunoParser::parse(Rule::type_, return_type).unwrap();
 
                                     let parser = JunoASTParser::new("_".into());
 
@@ -167,7 +170,11 @@ impl<'a> MetaIRGen<'a> {
 
                 MetaExpr {
                     span,
-                    kind: MetaExprKind::Call { target, args: args.into_boxed_slice(), span },
+                    kind: MetaExprKind::Call {
+                        target,
+                        args: args.into_boxed_slice(),
+                        span,
+                    },
                     ty,
                 }
             }
