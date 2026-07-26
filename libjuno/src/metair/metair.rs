@@ -3,7 +3,9 @@
 //file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use crate::ast::JunoSpan;
-use std::{collections::HashMap, fmt};
+use std::fmt;
+
+use rustc_hash::FxHashMap;
 // =======================
 // IDs
 // =======================
@@ -33,10 +35,10 @@ pub struct MetaField {
 #[derive(Debug, Clone)]
 pub struct MetaProgram {
     pub span: JunoSpan,
-    pub functions: HashMap<SymbolId, MetaFunction>,
-    pub declarations: HashMap<SymbolId, MetaDeclaration>,
-    pub structs: HashMap<SymbolId, MetaStruct>,
-    pub struct_fields: HashMap<SymbolId, Box<[String]>>,
+    pub functions: FxHashMap<SymbolId, MetaFunction>,
+    pub declarations: FxHashMap<SymbolId, MetaDeclaration>,
+    pub structs: FxHashMap<SymbolId, MetaStruct>,
+    pub struct_fields: FxHashMap<SymbolId, Box<[String]>>,
     pub string_table: Box<[String]>,
     pub symbol_table: Box<[String]>,
 }
@@ -49,7 +51,7 @@ pub struct MetaProgram {
 pub struct MetaFunction {
     pub span: JunoSpan,
     pub name: SymbolId,
-    pub locals: HashMap<SymbolId, MetaType>,
+    pub locals: FxHashMap<SymbolId, MetaType>,
     pub params: Box<[MetaParam]>,
     pub ret: Option<MetaType>,
     pub body: Box<[MetaStmt]>,

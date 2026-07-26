@@ -2,7 +2,7 @@
 //License, v. 2.0. If a copy of the MPL was not distributed with this
 //file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::ast::*;
 use crate::metair::generator::MetaIRGen;
@@ -16,8 +16,8 @@ impl<'a> MetaIRGen<'a> {
     pub(crate) fn lower_block(
         &mut self,
         block: &Block,
-    ) -> (Vec<MetaStmt>, HashMap<String, MetaType>) {
-        self.locals.push(HashMap::new());
+    ) -> (Vec<MetaStmt>, FxHashMap<String, MetaType>) {
+        self.locals.push(FxHashMap::default());
 
         let body = block
             .stmts

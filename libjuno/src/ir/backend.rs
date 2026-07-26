@@ -5,7 +5,7 @@
 use inkwell::types::BasicTypeEnum;
 use inkwell::types::StructType;
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use inkwell::{
     basic_block::BasicBlock,
@@ -36,9 +36,9 @@ pub struct LLVMBackend<'ctx> {
     pub source_file_name: String,
     pub program: &'ctx MetaProgram,
 
-    pub functions: HashMap<FunctionId, FunctionValue<'ctx>>,
+    pub functions: FxHashMap<FunctionId, FunctionValue<'ctx>>,
 
-    pub structs: HashMap<TypeId, StructType<'ctx>>,
+    pub structs: FxHashMap<TypeId, StructType<'ctx>>,
     pub scopes: Vec<Scope<'ctx>>,
 
     pub current_function: Option<FunctionValue<'ctx>>,
@@ -47,7 +47,7 @@ pub struct LLVMBackend<'ctx> {
 
     pub loop_stack: Vec<LoopFrame<'ctx>>,
 
-    pub builtins: HashMap<&'ctx str, FunctionValue<'ctx>>,
+    pub builtins: FxHashMap<&'ctx str, FunctionValue<'ctx>>,
 }
 
 impl<'ctx> LLVMBackend<'ctx> {
@@ -68,9 +68,9 @@ impl<'ctx> LLVMBackend<'ctx> {
 
             program,
 
-            functions: HashMap::new(),
-            structs: HashMap::new(),
-            builtins: HashMap::new(),
+            functions: FxHashMap::default(),
+            structs: FxHashMap::default(),
+            builtins: FxHashMap::default(),
             scopes: Vec::new(),
 
             loop_stack: Vec::new(),
