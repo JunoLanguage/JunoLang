@@ -2,7 +2,7 @@
 //License, v. 2.0. If a copy of the MPL was not distributed with this
 //file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::ast::{Function, Item, JunoSpan, Program};
 use crate::metair::metair::*;
@@ -11,11 +11,11 @@ pub struct MetaIRGen<'a> {
     pub program: &'a Program,
     pub source_code: String,
     pub source_file_name: String,
-    pub struct_fields: HashMap<SymbolId, HashMap<String, u32>>,
+    pub struct_fields: FxHashMap<SymbolId, FxHashMap<String, u32>>,
 
-    pub strings: HashMap<String, StringId>,
+    pub strings: FxHashMap<String, StringId>,
 
-    pub declarations: HashMap<String, MetaDeclaration>,
+    pub declarations: FxHashMap<String, MetaDeclaration>,
 
     pub symbol_list: Vec<String>,
 
@@ -23,11 +23,11 @@ pub struct MetaIRGen<'a> {
 
     pub string_list: Vec<String>,
 
-    pub(crate) function_index: HashMap<String, &'a Function>,
+    pub(crate) function_index: FxHashMap<String, &'a Function>,
 
-    pub locals: Vec<HashMap<SymbolId, MetaType>>,
+    pub locals: Vec<FxHashMap<SymbolId, MetaType>>,
 
-    pub structs: HashMap<String, MetaStruct>,
+    pub structs: FxHashMap<String, MetaStruct>,
 
     pub(crate) next_string: u32,
     pub(crate) next_struct_field: u32,
@@ -48,14 +48,14 @@ impl<'a> MetaIRGen<'a> {
             program,
             source_code,
             source_file_name,
-            struct_fields: HashMap::new(),
-            strings: HashMap::new(),
-            declarations: HashMap::new(),
+            struct_fields: FxHashMap::default(),
+            strings: FxHashMap::default(),
+            declarations: FxHashMap::default(),
             symbol_list: Vec::new(),
             symbol_set: std::collections::HashSet::new(),
             string_list: Vec::new(),
             locals: Vec::new(),
-            structs: HashMap::new(),
+            structs: FxHashMap::default(),
             function_index,
 
             next_string: 0,
