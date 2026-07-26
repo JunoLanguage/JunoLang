@@ -22,4 +22,4 @@ updates:
 
     versioning-strategy: auto
 
-    target-branch: master
+    target-branch: main
