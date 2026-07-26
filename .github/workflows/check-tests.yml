@@ -28,8 +28,7 @@ on:
     - 'examples/**'
     - 'imgs/**'
     - '.envrc'
-    branches:
-    - 'main'
+
 permissions:
   contents: read
 
