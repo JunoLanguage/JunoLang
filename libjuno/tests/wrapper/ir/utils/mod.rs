@@ -7,7 +7,7 @@ use libjuno::ast::JunoSpan;
 use libjuno::ir::{LLVMBackend, LLVMError};
 use libjuno::{JunoParser, Rule, metair::*, parse_program};
 use pest::Parser;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::sync::Arc;
 
 /// Adjust this to match your real JunoSpan constructor.
@@ -60,6 +60,6 @@ pub fn dummy_meta_function() -> MetaFunction {
         ret: Some(MetaType::Named("void".into(), dummy_span())),
         body: Box::new([]),
         span: dummy_span(),
-        locals: HashMap::new(),
+        locals: FxHashMap::default(),
     }
 }

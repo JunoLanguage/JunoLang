@@ -2,7 +2,7 @@
 //License, v. 2.0. If a copy of the MPL was not distributed with this
 //file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use libjuno::{MetaConst, MetaExpr, MetaExprKind, MetaFunction, MetaStmt, MetaType};
 
@@ -26,7 +26,7 @@ fn lower_simple_return_function() {
                 dummy_span(),
             )]),
             span: dummy_span(),
-            locals: HashMap::new(),
+            locals: FxHashMap::default(),
         },
     );
     let prog = Box::leak(Box::new(prog));

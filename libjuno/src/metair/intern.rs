@@ -2,7 +2,7 @@
 //License, v. 2.0. If a copy of the MPL was not distributed with this
 //file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::metair::generator::MetaIRGen;
 use crate::metair::metair::*;
@@ -26,7 +26,8 @@ impl<'a> MetaIRGen<'a> {
                 return *id;
             }
         } else {
-            self.struct_fields.insert(struct_id.clone(), HashMap::new());
+            self.struct_fields
+                .insert(struct_id.clone(), FxHashMap::default());
         }
 
         let id = self.next_struct_field;

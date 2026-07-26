@@ -2,7 +2,7 @@
 //License, v. 2.0. If a copy of the MPL was not distributed with this
 //file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use inkwell::{
     types::{AsTypeRef, BasicTypeEnum},
@@ -145,7 +145,7 @@ impl<'ctx> LLVMBackend<'ctx> {
     pub fn get_variable_expr(
         &self,
         id: &str,
-        locals: &HashMap<SymbolId, MetaType>,
+        locals: &FxHashMap<SymbolId, MetaType>,
         span: &JunoSpan,
     ) -> Result<BasicValueEnum<'ctx>, LLVMError> {
         let mut parts = id.split('.');

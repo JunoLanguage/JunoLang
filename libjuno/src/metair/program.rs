@@ -2,7 +2,7 @@
 //License, v. 2.0. If a copy of the MPL was not distributed with this
 //file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::ast::*;
 use crate::metair::generator::MetaIRGen;
@@ -18,8 +18,8 @@ impl<'a> MetaIRGen<'a> {
 
         let span = program.span;
 
-        let mut functions = HashMap::new();
-        let mut declarations = HashMap::new();
+        let mut functions = FxHashMap::default();
+        let mut declarations = FxHashMap::default();
 
         for item in &program.items {
             match item {
@@ -70,7 +70,7 @@ impl<'a> MetaIRGen<'a> {
     // =======================
 
     fn lower_function(&mut self, function: &Function) -> MetaFunction {
-        self.locals.push(HashMap::new());
+        self.locals.push(FxHashMap::default());
 
         let name = self.intern_symbol(&function.name);
 
@@ -118,7 +118,7 @@ impl<'a> MetaIRGen<'a> {
     }
 
     fn lower_declaration(&mut self, declaration: &Declaration) -> MetaDeclaration {
-        self.locals.push(HashMap::new());
+        self.locals.push(FxHashMap::default());
 
         let name = self.intern_symbol(&declaration.name);
 

@@ -2,7 +2,7 @@
 //License, v. 2.0. If a copy of the MPL was not distributed with this
 //file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use inkwell::{types::BasicTypeEnum, values::PointerValue};
 
@@ -14,7 +14,7 @@ pub struct Variable<'ctx> {
 }
 #[derive(Default)]
 pub struct Scope<'ctx> {
-    variables: HashMap<SymbolId, Variable<'ctx>>,
+    variables: FxHashMap<SymbolId, Variable<'ctx>>,
 }
 
 impl<'ctx> Scope<'ctx> {
