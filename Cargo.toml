@@ -20,7 +20,7 @@ categories = ["compilers"]
 [workspace.dependencies]
 
 
-inkwell = { version = "0.9", features = ["llvm22-1"] }
+inkwell = { version = "0.10", features = ["llvm22-1"] }
 pest = "2.8"
 pest_derive = "2.8"
 phf = "0.14"
